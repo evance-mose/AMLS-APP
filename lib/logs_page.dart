@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:amls/log_form_page.dart';
 
 class MaintenanceLogsScreen extends StatefulWidget {
   const MaintenanceLogsScreen({super.key});
@@ -153,8 +154,17 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to add new log screen
+        onPressed: () async {
+          final newLog = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(builder: (context) => const LogFormPage()),
+          );
+
+          if (newLog != null) {
+            setState(() {
+              maintenanceLogs.add(newLog);
+            });
+          }
         },
         backgroundColor: Colors.black87,
         child: const Icon(Icons.add, color: Colors.white),
@@ -164,15 +174,35 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
 
   Widget _buildMaintenanceLogCard(Map<String, dynamic> log) {
     final isCompleted = log['status'] == 'Completed';
+    final logIndex = maintenanceLogs.indexOf(log); // Get the index of the log
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () {
-            // Navigate to log details screen
-            _showLogDetails(log);
+          onTap: () async {
+            final result = await Navigator.push<Map<String, dynamic>>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LogFormPage(log: log, isViewOnly: true), // View-only mode
+              ),
+            );
+
+            if (result != null) {
+              if (result.containsKey('action') && result['action'] == 'delete') {
+                // Handle delete action from the view-only form
+                _confirmDeleteLog(log);
+              } else {
+                // Handle update from the edit mode initiated from view-only form
+                setState(() {
+                  final logIndex = maintenanceLogs.indexOf(log);
+                  if (logIndex != -1) {
+                    maintenanceLogs[logIndex] = result; // Update with the edited log
+                  }
+                });
+              }
+            }
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -265,69 +295,32 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     );
   }
 
-  void _showLogDetails(Map<String, dynamic> log) {
-    showModalBottomSheet(
+  void _confirmDeleteLog(Map<String, dynamic> log) {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Log'),
+          content: const Text('Are you sure you want to delete this log?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Cancel'),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Log Details',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildDetailRow('ATM ID', log['atmId']),
-                    _buildDetailRow('Location', log['location']),
-                    _buildDetailRow('Date', log['date']),
-                    _buildDetailRow('Time', log['time']),
-                    _buildDetailRow('Technician', log['technician']),
-                    _buildDetailRow('Type', log['type']),
-                    _buildDetailRow('Status', log['status']),
-                  ],
-                ),
-              ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  maintenanceLogs.remove(log);
+                });
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
