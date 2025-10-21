@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'cubits/auth/auth_cubit.dart';
+import 'cubits/home/home_cubit.dart';
+import 'cubits/issues/issue_cubit.dart';
+import 'cubits/logs/log_cubit.dart';
 import 'home_page.dart';
 import 'issues_page.dart';
 import 'login_page.dart';
@@ -16,12 +19,47 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AuthCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => AuthCubit()),
+        BlocProvider(create: (context) => LogCubit()),
+        BlocProvider(create: (context) => IssueCubit()),
+        BlocProvider(create: (context) => HomeCubit()),
+      ],
       child: MaterialApp(
         title: 'AMLS',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.black87),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.grey,
+            primary: Colors.black,
+            onPrimary: Colors.white,
+            primaryContainer: Colors.grey.shade200,
+            onPrimaryContainer: Colors.black87,
+            secondary: Colors.grey.shade800,
+            onSecondary: Colors.white,
+            secondaryContainer: Colors.grey.shade300,
+            onSecondaryContainer: Colors.black87,
+            tertiary: Colors.blueGrey,
+            onTertiary: Colors.white,
+            tertiaryContainer: Colors.blueGrey.shade100,
+            onTertiaryContainer: Colors.blueGrey.shade900,
+            error: Colors.red.shade700,
+            onError: Colors.white,
+            errorContainer: Colors.red.shade100,
+            onErrorContainer: Colors.red.shade900,
+            background: Colors.white,
+            onBackground: Colors.black87,
+            surface: Colors.white,
+            onSurface: Colors.black87,
+            surfaceVariant: Colors.grey.shade100,
+            onSurfaceVariant: Colors.grey.shade700,
+            outline: Colors.grey.shade300,
+            shadow: Colors.black,
+            inverseSurface: Colors.black87,
+            onInverseSurface: Colors.white,
+            inversePrimary: Colors.grey.shade400,
+            surfaceTint: Colors.black,
+          ),
           useMaterial3: true,
           textTheme: const TextTheme(
             displayLarge: TextStyle(fontSize: 96, fontWeight: FontWeight.bold, color: Colors.black87),

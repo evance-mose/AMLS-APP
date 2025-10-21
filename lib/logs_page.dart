@@ -1,5 +1,7 @@
+import 'package:amls/cubits/logs/log_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/log_form_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class MaintenanceLogsScreen extends StatefulWidget {
   const MaintenanceLogsScreen({super.key});
@@ -9,175 +11,160 @@ class MaintenanceLogsScreen extends StatefulWidget {
 }
 
 class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
-  // Sample data - replace with actual data from your backend
-  final List<Map<String, dynamic>> maintenanceLogs = [
-    {
-      'atmId': 'ATM-001',
-      'location': 'Main Branch - Downtown',
-      'date': '2024-10-20',
-      'time': '14:30',
-      'technician': 'Mike Johnson',
-      'status': 'Completed',
-      'type': 'Routine Check',
-    },
-    {
-      'atmId': 'ATM-005',
-      'location': 'Shopping Mall - East',
-      'date': '2024-10-20',
-      'time': '11:15',
-      'technician': 'Sarah Williams',
-      'status': 'In Progress',
-      'type': 'Cash Replenishment',
-    },
-    {
-      'atmId': 'ATM-012',
-      'location': 'Airport Terminal 2',
-      'date': '2024-10-19',
-      'time': '09:00',
-      'technician': 'David Brown',
-      'status': 'Completed',
-      'type': 'Hardware Repair',
-    },
-    {
-      'atmId': 'ATM-008',
-      'location': 'Central Market',
-      'date': '2024-10-18',
-      'time': '16:45',
-      'technician': 'Mike Johnson',
-      'status': 'Completed',
-      'type': 'Software Update',
-    },
-    {
-      'atmId': 'ATM-015',
-      'location': 'Train Station',
-      'date': '2024-10-18',
-      'time': '10:20',
-      'technician': 'Sarah Williams',
-      'status': 'Completed',
-      'type': 'Routine Check',
-    },
-  ];
-
   String selectedFilter = 'All';
 
   final List<String> _filterOptions = ['All', 'Completed', 'In Progress'];
 
   List<Map<String, dynamic>> get filteredLogs {
+    final currentLogs = (context.read<LogCubit>().state as LogLoaded).logs;
     if (selectedFilter == 'All') {
-      return maintenanceLogs;
+      return currentLogs;
     }
-    return maintenanceLogs.where((log) => log['status'] == selectedFilter).toList();
+    return currentLogs.where((log) => log['status'] == selectedFilter).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<LogCubit>().fetchLogs();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.background,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Maintenance Logs',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              // Implement search functionality
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              _showMoreOptions(); // New function for more options
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                DropdownButton<String>(
-                  value: selectedFilter,
-                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
-                  underline: Container(), // Remove the underline
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedFilter = newValue!;
-                    });
-                  },
-                  items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-          // Logs List
-          Expanded(
-            child: filteredLogs.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.assignment_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No logs found',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: filteredLogs.length,
-                    itemBuilder: (context, index) {
-                      final log = filteredLogs[index];
-                      return _buildMaintenanceLogCard(log);
-                    },
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newLog = await Navigator.push<Map<String, dynamic>>(
-            context,
-            MaterialPageRoute(builder: (context) => const LogFormPage()),
+    return BlocConsumer<LogCubit, LogState>(
+      listener: (context, state) {
+        if (state is LogError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
           );
+        }
+      },
+      builder: (context, state) {
+        List<Map<String, dynamic>> displayLogs = [];
+        bool isLoading = false;
 
-          if (newLog != null) {
-            setState(() {
-              maintenanceLogs.add(newLog);
-            });
-          }
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-      ),
+        if (state is LogLoaded) {
+          displayLogs = state.logs;
+        } else if (state is LogLoading) {
+          isLoading = true;
+          displayLogs = (context.read<LogCubit>().state is LogLoaded)
+              ? (context.read<LogCubit>().state as LogLoaded).logs
+              : [];
+        }
+
+        final filteredDisplayLogs = displayLogs.where((log) {
+          if (selectedFilter == 'All') return true;
+          return log['status'] == selectedFilter;
+        }).toList();
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Theme.of(context).colorScheme.background,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Maintenance Logs',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () {
+                  // Implement search functionality
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () {
+                  _showMoreOptions(); // New function for more options
+                },
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    DropdownButton<String>(
+                      value: selectedFilter,
+                      icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
+                      underline: Container(), // Remove the underline
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedFilter = newValue!;
+                        });
+                      },
+                      items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              // Logs List
+              Expanded(
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredDisplayLogs.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.assignment_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No logs found',
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: filteredDisplayLogs.length,
+                            itemBuilder: (context, index) {
+                              final log = filteredDisplayLogs[index];
+                              return _buildMaintenanceLogCard(log);
+                            },
+                          ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final newLog = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(builder: (context) => const LogFormPage()),
+              );
+
+              if (newLog != null) {
+                context.read<LogCubit>().addLog(newLog);
+              }
+            },
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildMaintenanceLogCard(Map<String, dynamic> log) {
     final isCompleted = log['status'] == 'Completed';
-    final logIndex = maintenanceLogs.indexOf(log); // Get the index of the log
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
@@ -198,12 +185,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                 _confirmDeleteLog(log);
               } else {
                 // Handle update from the edit mode initiated from view-only form
-                setState(() {
-                  final logIndex = maintenanceLogs.indexOf(log);
-                  if (logIndex != -1) {
-                    maintenanceLogs[logIndex] = result; // Update with the edited log
-                  }
-                });
+                context.read<LogCubit>().updateLog(log, result);
               }
             }
           },
@@ -310,9 +292,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  maintenanceLogs.remove(log);
-                });
+                context.read<LogCubit>().deleteLog(log);
                 Navigator.of(context).pop(); // Dismiss dialog
               },
               child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
@@ -320,6 +300,13 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
           ],
         );
       },
+    );
+  }
+
+  PopupMenuEntry<String> _buildPopupMenuItem(String value, String text) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Text(text, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
     );
   }
 
@@ -333,19 +320,10 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         0,
       ),
       items: <PopupMenuEntry<String>>[
-        PopupMenuEntry<String> _buildPopupMenuItem(String value, String text) {
-          return PopupMenuItem<String>(
-            value: value,
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-          );
-        }
-
-        return [
-          _buildPopupMenuItem('settings', 'Settings'),
-          _buildPopupMenuItem('help', 'Help'),
-          _buildPopupMenuItem('about', 'About'),
-        ];
-      },
+        _buildPopupMenuItem('settings', 'Settings'),
+        _buildPopupMenuItem('help', 'Help'),
+        _buildPopupMenuItem('about', 'About'),
+      ],
     ).then((value) {
       if (value != null) {
         // Handle selected option

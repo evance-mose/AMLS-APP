@@ -79,63 +79,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 8),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'AMLS',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
-                  ),
-                  Text(
-                    'Welcome, $userName',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home, color: Theme.of(context).colorScheme.onSurface),
-              title: Text('Home', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/home');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.onSurface),
-              title: Text('Maintenance Logs', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/logs');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.warning, color: Theme.of(context).colorScheme.onSurface),
-              title: Text('Issues & Reports', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/issues');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-              title: Text('Logout', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<AuthCubit>().logout();
-              },
-            ),
-          ],
-        ),
-      ),
+    
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -217,41 +161,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show dialog to choose between adding log or issue
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Add New', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.primary),
-                    title: Text('Maintenance Log', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigate to add log screen
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
-                    title: Text('Issue Report', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigate to add issue screen
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-      ),
+      )
     );
   }
 

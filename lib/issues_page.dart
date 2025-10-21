@@ -1,5 +1,7 @@
+import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/issue_form_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class IssuesScreen extends StatefulWidget {
   const IssuesScreen({super.key});
@@ -10,163 +12,198 @@ class IssuesScreen extends StatefulWidget {
 
 class _IssuesScreenState extends State<IssuesScreen> {
   // Sample data - replace with actual data from your backend
-  final List<Map<String, dynamic>> issues = [
-    {
-      'atmId': 'ATM-003',
-      'location': 'City Center Branch',
-      'issue': 'Card reader malfunction',
-      'priority': 'High',
-      'reportedDate': '2024-10-21',
-      'status': 'Open',
-    },
-    {
-      'atmId': 'ATM-007',
-      'location': 'University Campus',
-      'issue': 'Cash dispenser error',
-      'priority': 'Critical',
-      'reportedDate': '2024-10-21',
-      'status': 'Assigned',
-    },
-    {
-      'atmId': 'ATM-009',
-      'location': 'Hospital Branch',
-      'issue': 'Screen display issue',
-      'priority': 'Medium',
-      'reportedDate': '2024-10-20',
-      'status': 'Open',
-    },
-    {
-      'atmId': 'ATM-015',
-      'location': 'Train Station',
-      'issue': 'Receipt printer jam',
-      'priority': 'Low',
-      'reportedDate': '2024-10-20',
-      'status': 'Resolved',
-    },
-    {
-      'atmId': 'ATM-011',
-      'location': 'Shopping Plaza',
-      'issue': 'Network connectivity issue',
-      'priority': 'High',
-      'reportedDate': '2024-10-19',
-      'status': 'Assigned',
-    },
-  ];
+  // final List<Map<String, dynamic>> issues = [
+  //   {
+  //     'atmId': 'ATM-003',
+  //     'location': 'City Center Branch',
+  //     'issue': 'Card reader malfunction',
+  //     'priority': 'High',
+  //     'reportedDate': '2024-10-21',
+  //     'status': 'Open',
+  //   },
+  //   {
+  //     'atmId': 'ATM-007',
+  //     'location': 'University Campus',
+  //     'issue': 'Cash dispenser error',
+  //     'priority': 'Critical',
+  //     'reportedDate': '2024-10-21',
+  //     'status': 'Assigned',
+  //   },
+  //   {
+  //     'atmId': 'ATM-009',
+  //     'location': 'Hospital Branch',
+  //     'issue': 'Screen display issue',
+  //     'priority': 'Medium',
+  //     'reportedDate': '2024-10-20',
+  //     'status': 'Open',
+  //   },
+  //   {
+  //     'atmId': 'ATM-015',
+  //     'location': 'Train Station',
+  //     'issue': 'Receipt printer jam',
+  //     'priority': 'Low',
+  //     'reportedDate': '2024-10-20',
+  //     'status': 'Resolved',
+  //   },
+  //   {
+  //     'atmId': 'ATM-011',
+  //     'location': 'Shopping Plaza',
+  //     'issue': 'Network connectivity issue',
+  //     'priority': 'High',
+  //     'reportedDate': '2024-10-19',
+  //     'status': 'Assigned',
+  //   },
+  // ];
 
   String selectedFilter = 'All';
 
   final List<String> _filterOptions = ['All', 'Critical', 'High', 'Medium', 'Low'];
 
   List<Map<String, dynamic>> get filteredIssues {
+    final currentIssues = (context.read<IssueCubit>().state as IssueLoaded).issues;
     if (selectedFilter == 'All') {
-      return issues;
+      return currentIssues;
     }
-    return issues.where((issue) => issue['priority'] == selectedFilter).toList();
+    return currentIssues.where((issue) => issue['priority'] == selectedFilter).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<IssueCubit>().fetchIssues();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.background,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Issues & Reports',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              // Implement search functionality
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () {
-              _showMoreOptions(); // New function for more options
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                DropdownButton<String>(
-                  value: selectedFilter,
-                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
-                  underline: Container(), // Remove the underline
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedFilter = newValue!;
-                    });
-                  },
-                  items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-          // Issues List
-          Expanded(
-            child: filteredIssues.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.warning_amber_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No issues found',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: filteredIssues.length,
-                    itemBuilder: (context, index) {
-                      final issue = filteredIssues[index];
-                      return _buildIssueCard(issue);
-                    },
-                  ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newIssue = await Navigator.push<Map<String, dynamic>>(
-            context,
-            MaterialPageRoute(builder: (context) => const IssueFormPage()),
+    return BlocConsumer<IssueCubit, IssueState>(
+      listener: (context, state) {
+        if (state is IssueError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
           );
+        }
+      },
+      builder: (context, state) {
+        List<Map<String, dynamic>> displayIssues = [];
+        bool isLoading = false;
 
-          if (newIssue != null) {
-            setState(() {
-              issues.add(newIssue);
-            });
-          }
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-      ),
+        if (state is IssueLoaded) {
+          displayIssues = state.issues;
+        } else if (state is IssueLoading) {
+          isLoading = true;
+          displayIssues = (context.read<IssueCubit>().state is IssueLoaded)
+              ? (context.read<IssueCubit>().state as IssueLoaded).issues
+              : [];
+        }
+
+        final filteredDisplayIssues = displayIssues.where((issue) {
+          if (selectedFilter == 'All') return true;
+          return issue['priority'] == selectedFilter;
+        }).toList();
+
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Theme.of(context).colorScheme.background,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Issues & Reports',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () {
+                  // Implement search functionality
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
+                onPressed: () {
+                  _showMoreOptions(); // New function for more options
+                },
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    DropdownButton<String>(
+                      value: selectedFilter,
+                      icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
+                      underline: Container(), // Remove the underline
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedFilter = newValue!;
+                        });
+                      },
+                      items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              // Issues List
+              Expanded(
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredDisplayIssues.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.warning_amber_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No issues found',
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: filteredDisplayIssues.length,
+                            itemBuilder: (context, index) {
+                              final issue = filteredDisplayIssues[index];
+                              return _buildIssueCard(issue);
+                            },
+                          ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final newIssue = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(builder: (context) => const IssueFormPage()),
+              );
+
+              if (newIssue != null) {
+                context.read<IssueCubit>().addIssue(newIssue);
+              }
+            },
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+          ),
+        );
+      },
     );
   }
 
@@ -175,23 +212,21 @@ class _IssuesScreenState extends State<IssuesScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Issue'),
-          content: const Text('Are you sure you want to delete this issue?'),
+          title: Text('Delete Issue', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text('Are you sure you want to delete this issue?', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Dismiss dialog
               },
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  issues.remove(issue);
-                });
+                context.read<IssueCubit>().deleteIssue(issue);
                 Navigator.of(context).pop(); // Dismiss dialog
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
             ),
           ],
         );
@@ -285,12 +320,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                 _confirmDeleteIssue(issue);
               } else {
                 // Handle update from the edit mode initiated from view-only form
-                setState(() {
-                  final issueIndex = issues.indexOf(issue);
-                  if (issueIndex != -1) {
-                    issues[issueIndex] = result; // Update with the edited issue
-                  }
-                });
+                context.read<IssueCubit>().updateIssue(issue, result);
               }
             }
           },
