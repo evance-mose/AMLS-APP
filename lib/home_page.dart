@@ -8,6 +8,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final String userName = 'John Doe';
+
+  // Sample data - replace with actual data from your backend
+  final int totalLogs = 3;
+  final int activeIssues = 3;
+  final int inProgressLogs = 1;
+  final int criticalIssues = 1;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20,),
+                    Icon(Icons.logout, size: 20),
                     SizedBox(width: 12),
                     Text('Logout'),
                   ],
@@ -72,168 +80,150 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Text
-            const Text(
-              'Welcome back',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ATM Maintenance System',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Here\'s your overview',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
+              const SizedBox(height: 32),
+              
+              // Summary Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Total Logs',
+                      totalLogs.toString(),
+                      Icons.assignment_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Active Issues',
+                      activeIssues.toString(),
+                      Icons.warning_amber_outlined,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 32),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'In Progress',
+                      inProgressLogs.toString(),
+                      Icons.pending_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Critical',
+                      criticalIssues.toString(),
+                      Icons.error_outline,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
 
-            // Stats Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Users',
-                    '2,543',
-                    Icons.people_outline,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Active',
-                    '1,842',
-                    Icons.trending_up,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Projects',
-                    '18',
-                    Icons.folder_outlined,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Completed',
-                    '127',
-                    Icons.check_circle_outline,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Recent Activity
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+              // Navigation Cards
+              _buildNavigationCard(
+                context,
+                'Maintenance Logs',
+                'View all maintenance activities',
+                Icons.assignment_outlined,
+                Colors.blue,
+                () => Navigator.pushNamed(context, '/logs'),
               ),
-            ),
-            const SizedBox(height: 16),
-            _buildActivityItem(
-              'New user registered',
-              '2 minutes ago',
-            ),
-            _buildActivityItem(
-              'Project completed',
-              '1 hour ago',
-            ),
-            _buildActivityItem(
-              'New message received',
-              '3 hours ago',
-            ),
-            _buildActivityItem(
-              'Payment processed',
-              '5 hours ago',
-            ),
-          ],
+              const SizedBox(height: 16),
+              _buildNavigationCard(
+                context,
+                'Issues & Reports',
+                'View all reported issues',
+                Icons.warning_amber_outlined,
+                Colors.orange,
+                () => Navigator.pushNamed(context, '/issues'),
+              ),
+            ],
+          ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Show dialog to choose between adding log or issue
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Add New'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.assignment),
+                    title: const Text('Maintenance Log'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigate to add log screen
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.warning),
+                    title: const Text('Issue Report'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      // Navigate to add issue screen
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        backgroundColor: Colors.black87,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
+  Widget _buildSummaryCard(String title, String count, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.black87, size: 28),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(String title, String time) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 16),
+          Icon(icon, color: Colors.black87, size: 24),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  count,
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  time,
+                  title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.grey.shade600,
                   ),
                 ),
@@ -241,6 +231,72 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 20),
+          ],
+        ),
       ),
     );
   }

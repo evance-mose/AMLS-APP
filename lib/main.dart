@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:amls/home_page.dart';
-import 'package:amls/login_page.dart';
+import 'home_page.dart';
+import 'logs_page.dart';
+import 'issues_page.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -12,21 +14,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'AMLS',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: false,
-        fontFamily: 'Open Sans',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-        ),
-        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black87),
+        useMaterial3: true,
       ),
-      initialRoute: '/login',
+      initialRoute: '/home', // or '/login' if you want to start at login
       routes: {
-        '/': (context) => const HomePage(),
-        '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomePage(),
+        '/logs': (context) => const MaintenanceLogsScreen(),
+        '/issues': (context) => const IssuesScreen(),
+        // '/login': (context) => const LoginPage(),
       },
     );
   }
