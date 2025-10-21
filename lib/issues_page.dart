@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:amls/issue_form_page.dart';
 
 class IssuesScreen extends StatefulWidget {
   const IssuesScreen({super.key});
@@ -89,6 +90,12 @@ class _IssuesScreenState extends State<IssuesScreen> {
               // Implement search functionality
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            onPressed: () {
+              _showMoreOptions(); // New function for more options
+            },
+          ),
         ],
       ),
       body: Column(
@@ -148,13 +155,99 @@ class _IssuesScreenState extends State<IssuesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to add new issue screen
+        onPressed: () async {
+          final newIssue = await Navigator.push<Map<String, dynamic>>(
+            context,
+            MaterialPageRoute(builder: (context) => const IssueFormPage()),
+          );
+
+          if (newIssue != null) {
+            setState(() {
+              issues.add(newIssue);
+            });
+          }
         },
         backgroundColor: Colors.black87,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
+  }
+
+  void _confirmDeleteIssue(Map<String, dynamic> issue) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Issue'),
+          content: const Text('Are you sure you want to delete this issue?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  issues.remove(issue);
+                });
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMoreOptions() {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width - 60, // X position (right corner)
+        AppBar().preferredSize.height + MediaQuery.of(context).padding.top, // Y position (below AppBar)
+        0,
+        0,
+      ),
+      items: <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: Text('Settings'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'help',
+          child: Text('Help'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'about',
+          child: Text('About'),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        // Handle selected option
+        _handleMoreOptionSelected(value);
+      }
+    });
+  }
+
+  void _handleMoreOptionSelected(String value) {
+    switch (value) {
+      case 'settings':
+        // Navigate to settings or perform action
+        debugPrint('Settings selected');
+        break;
+      case 'help':
+        // Navigate to help or perform action
+        debugPrint('Help selected');
+        break;
+      case 'about':
+        // Navigate to about or perform action
+        debugPrint('About selected');
+        break;
+    }
   }
 
   Widget _buildIssueCard(Map<String, dynamic> issue) {
@@ -181,9 +274,28 @@ class _IssuesScreenState extends State<IssuesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () {
-            // Navigate to issue details screen
-            _showIssueDetails(issue);
+          onTap: () async {
+            final result = await Navigator.push<Map<String, dynamic>>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IssueFormPage(issue: issue, isViewOnly: true), // View-only mode
+              ),
+            );
+
+            if (result != null) {
+              if (result.containsKey('action') && result['action'] == 'delete') {
+                // Handle delete action from the view-only form
+                _confirmDeleteIssue(issue);
+              } else {
+                // Handle update from the edit mode initiated from view-only form
+                setState(() {
+                  final issueIndex = issues.indexOf(issue);
+                  if (issueIndex != -1) {
+                    issues[issueIndex] = result; // Update with the edited issue
+                  }
+                });
+              }
+            }
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -280,174 +392,6 @@ class _IssuesScreenState extends State<IssuesScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showIssueDetails(Map<String, dynamic> issue) {
-    Color priorityColor;
-    switch (issue['priority']) {
-      case 'Critical':
-        priorityColor = Colors.red;
-        break;
-      case 'High':
-        priorityColor = Colors.orange;
-        break;
-      case 'Medium':
-        priorityColor = Colors.blue;
-        break;
-      default:
-        priorityColor = Colors.green;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Issue Details',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildDetailRow('ATM ID', issue['atmId']),
-                    _buildDetailRow('Location', issue['location']),
-                    _buildDetailRow('Issue', issue['issue']),
-                    _buildDetailRowWithColor('Priority', issue['priority'], priorityColor),
-                    _buildDetailRow('Reported Date', issue['reportedDate']),
-                    _buildDetailRow('Status', issue['status']),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // Navigate to assign technician or update status
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Update Status',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRowWithColor(String label, String value, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.3), width: 1),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

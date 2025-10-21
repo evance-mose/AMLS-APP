@@ -1,118 +1,87 @@
 import 'package:flutter/material.dart';
 
-class LogFormPage extends StatefulWidget {
-  final Map<String, dynamic>? log; // Optional: for editing existing logs
+class IssueFormPage extends StatefulWidget {
+  final Map<String, dynamic>? issue; // Optional: for editing existing issues
   final bool isViewOnly; // New parameter
 
-  const LogFormPage({super.key, this.log, this.isViewOnly = false}); // Default to false
+  const IssueFormPage({super.key, this.issue, this.isViewOnly = false});
 
   @override
-  State<LogFormPage> createState() => _LogFormPageState();
+  State<IssueFormPage> createState() => _IssueFormPageState();
 }
 
-class _LogFormPageState extends State<LogFormPage> {
+class _IssueFormPageState extends State<IssueFormPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _atmIdController;
   late TextEditingController _locationController;
-  late TextEditingController _dateController;
-  late TextEditingController _timeController;
-  late TextEditingController _technicianController;
+  late TextEditingController _issueController;
+  late String _selectedPriority;
+  late TextEditingController _reportedDateController;
   late String _selectedStatus;
-  late String _selectedType;
 
-  final List<String> _statuses = ['Completed', 'In Progress'];
-  final List<String> _types = ['Routine Check', 'Cash Replenishment', 'Hardware Repair', 'Software Update'];
+  final List<String> _priorities = ['Critical', 'High', 'Medium', 'Low'];
+  final List<String> _statuses = ['Open', 'Assigned', 'Resolved'];
 
   @override
   void initState() {
     super.initState();
-    _atmIdController = TextEditingController(text: widget.log?['atmId'] ?? '');
-    _locationController = TextEditingController(text: widget.log?['location'] ?? '');
-    _dateController = TextEditingController(text: widget.log?['date'] ?? '');
-    _timeController = TextEditingController(text: widget.log?['time'] ?? '');
-    _technicianController = TextEditingController(text: widget.log?['technician'] ?? '');
-    _selectedStatus = widget.log?['status'] ?? _statuses.first;
-    _selectedType = widget.log?['type'] ?? _types.first;
+    _atmIdController = TextEditingController(text: widget.issue?['atmId'] ?? '');
+    _locationController = TextEditingController(text: widget.issue?['location'] ?? '');
+    _issueController = TextEditingController(text: widget.issue?['issue'] ?? '');
+    _selectedPriority = widget.issue?['priority'] ?? _priorities.first;
+    _reportedDateController = TextEditingController(text: widget.issue?['reportedDate'] ?? '');
+    _selectedStatus = widget.issue?['status'] ?? _statuses.first;
   }
 
   @override
   void dispose() {
     _atmIdController.dispose();
     _locationController.dispose();
-    _dateController.dispose();
-    _timeController.dispose();
-    _technicianController.dispose();
+    _issueController.dispose();
+    _reportedDateController.dispose();
     super.dispose();
-  }
-
-  void _saveForm() {
-    if (_formKey.currentState!.validate()) {
-      final newLog = {
-        'atmId': _atmIdController.text,
-        'location': _locationController.text,
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'technician': _technicianController.text,
-        'status': _selectedStatus,
-        'type': _selectedType,
-      };
-      Navigator.pop(context, newLog); // Pass the new/edited log back
-    }
   }
 
   void _selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.tryParse(_dateController.text) ?? DateTime.now(),
+      initialDate: DateTime.tryParse(_reportedDateController.text) ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
       setState(() {
-        _dateController.text = picked.toIso8601String().split('T').first; // Format as YYYY-MM-DD
+        _reportedDateController.text = picked.toIso8601String().split('T').first; // Format as YYYY-MM-DD
       });
     }
   }
 
-  TimeOfDay _parseTimeOfDay(String timeString) {
-    if (timeString.isEmpty) {
-      return TimeOfDay.now();
-    }
-    final parts = timeString.split(':');
-    if (parts.length == 2) {
-      final hour = int.tryParse(parts[0]);
-      final minute = int.tryParse(parts[1]);
-      if (hour != null && minute != null) {
-        return TimeOfDay(hour: hour, minute: minute);
-      }
-    }
-    return TimeOfDay.now();
-  }
-
-  void _selectTime() async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _parseTimeOfDay(_timeController.text),
-    );
-    if (picked != null) {
-      setState(() {
-        _timeController.text = picked.format(context); // Format as HH:MM
-      });
+  void _saveForm() {
+    if (_formKey.currentState!.validate()) {
+      final newIssue = {
+        'atmId': _atmIdController.text,
+        'location': _locationController.text,
+        'issue': _issueController.text,
+        'priority': _selectedPriority,
+        'reportedDate': _reportedDateController.text,
+        'status': _selectedStatus,
+      };
+      Navigator.pop(context, newIssue); // Pass the new/edited issue back
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Set background color to white
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white, // Consistent with logs_page.dart
-        elevation: 0, // Consistent with logs_page.dart
-        iconTheme: const IconThemeData(color: Colors.black87), // Consistent with logs_page.dart
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
         title: Text(
           widget.isViewOnly
-              ? 'Log Details'
-              : (widget.log == null ? 'Create Log' : 'Edit Log'),
+              ? 'Issue Details'
+              : (widget.issue == null ? 'Create Issue' : 'Edit Issue'),
           style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.w600,
@@ -124,14 +93,14 @@ class _LogFormPageState extends State<LogFormPage> {
                   icon: const Icon(Icons.edit, color: Colors.black87),
                   onPressed: () async {
                     Navigator.pop(context); // Dismiss current view-only form
-                    final updatedLog = await Navigator.push<Map<String, dynamic>>(
+                    final updatedIssue = await Navigator.push<Map<String, dynamic>>(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LogFormPage(log: widget.log), // Navigate to edit mode
+                        builder: (context) => IssueFormPage(issue: widget.issue), // Navigate to edit mode
                       ),
                     );
-                    if (updatedLog != null) {
-                      Navigator.pop(context, updatedLog); // Pass updated log back to previous screen
+                    if (updatedIssue != null) {
+                      Navigator.pop(context, updatedIssue); // Pass updated issue back to previous screen
                     }
                   },
                 ),
@@ -165,25 +134,29 @@ class _LogFormPageState extends State<LogFormPage> {
               ),
               const SizedBox(height: 16),
               _buildTextFormField(
-                controller: _dateController,
-                labelText: 'Date (YYYY-MM-DD)',
-                validatorMessage: 'Please enter a date',
+                controller: _issueController,
+                labelText: 'Issue Description',
+                validatorMessage: 'Please enter an issue description',
+                readOnly: widget.isViewOnly,
+              ),
+              const SizedBox(height: 16),
+              _buildDropdownFormField(
+                value: _selectedPriority,
+                labelText: 'Priority',
+                items: _priorities,
+                onChanged: widget.isViewOnly ? null : (String? newValue) {
+                  setState(() {
+                    _selectedPriority = newValue!;
+                  });
+                },
+                readOnly: widget.isViewOnly,
+              ),
+              const SizedBox(height: 16),
+              _buildTextFormField(
+                controller: _reportedDateController,
+                labelText: 'Reported Date (YYYY-MM-DD)',
+                validatorMessage: 'Please enter a reported date',
                 onTap: widget.isViewOnly ? null : _selectDate,
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildTextFormField(
-                controller: _timeController,
-                labelText: 'Time (HH:MM)',
-                validatorMessage: 'Please enter a time',
-                onTap: widget.isViewOnly ? null : _selectTime,
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildTextFormField(
-                controller: _technicianController,
-                labelText: 'Technician',
-                validatorMessage: 'Please enter a technician name',
                 readOnly: widget.isViewOnly,
               ),
               const SizedBox(height: 16),
@@ -194,18 +167,6 @@ class _LogFormPageState extends State<LogFormPage> {
                 onChanged: widget.isViewOnly ? null : (String? newValue) {
                   setState(() {
                     _selectedStatus = newValue!;
-                  });
-                },
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownFormField(
-                value: _selectedType,
-                labelText: 'Type',
-                items: _types,
-                onChanged: widget.isViewOnly ? null : (String? newValue) {
-                  setState(() {
-                    _selectedType = newValue!;
                   });
                 },
                 readOnly: widget.isViewOnly,
@@ -224,7 +185,7 @@ class _LogFormPageState extends State<LogFormPage> {
                       ),
                     ),
                     child: const Text(
-                      'Save Log',
+                      'Save Issue',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -238,7 +199,6 @@ class _LogFormPageState extends State<LogFormPage> {
           ),
         ),
       ),
-      // Removed FloatingActionButton
     );
   }
 
@@ -251,9 +211,11 @@ class _LogFormPageState extends State<LogFormPage> {
   }) {
     return TextFormField(
       controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
       decoration: InputDecoration(
         labelText: labelText,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0), // Increased height
+        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -273,8 +235,6 @@ class _LogFormPageState extends State<LogFormPage> {
         }
         return null;
       },
-      onTap: onTap,
-      readOnly: readOnly,
     );
   }
 
@@ -282,14 +242,14 @@ class _LogFormPageState extends State<LogFormPage> {
     required String value,
     required String labelText,
     required List<String> items,
-    ValueChanged<String?>? onChanged, // Made nullable
+    ValueChanged<String?>? onChanged,
     bool readOnly = false,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
       decoration: InputDecoration(
         labelText: labelText,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0), // Increased height
+        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade300),

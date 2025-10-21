@@ -95,6 +95,12 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
               // Implement search functionality
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            onPressed: () {
+              _showMoreOptions(); // New function for more options
+            },
+          ),
         ],
       ),
       body: Column(
@@ -322,6 +328,54 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         );
       },
     );
+  }
+
+  void _showMoreOptions() {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width - 60, // X position (right corner)
+        AppBar().preferredSize.height + MediaQuery.of(context).padding.top, // Y position (below AppBar)
+        0,
+        0,
+      ),
+      items: <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: Text('Settings'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'help',
+          child: Text('Help'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'about',
+          child: Text('About'),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        // Handle selected option
+        _handleMoreOptionSelected(value);
+      }
+    });
+  }
+
+  void _handleMoreOptionSelected(String value) {
+    switch (value) {
+      case 'settings':
+        // Navigate to settings or perform action
+        debugPrint('Settings selected');
+        break;
+      case 'help':
+        // Navigate to help or perform action
+        debugPrint('Help selected');
+        break;
+      case 'about':
+        // Navigate to about or perform action
+        debugPrint('About selected');
+        break;
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {
