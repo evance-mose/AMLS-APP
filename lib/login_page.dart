@@ -14,12 +14,21 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
+  String? _errorMessage;
   bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
+        setState(() {
+          _isLoading = state is AuthLoading;
+          if (state is AuthError) {
+            _errorMessage = state.message;
+          } else {
+            _errorMessage = null;
+          }
+        });
         if (state is AuthAuthenticated) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Welcome, ${state.username}!')),
@@ -32,7 +41,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       builder: (context, state) {
-        _isLoading = state is AuthLoading;
         return Scaffold(
           body: Container(
             decoration: BoxDecoration(
@@ -68,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                             Icon(
                               Icons.lock_outline_rounded,
                               size: 64,
-                              color: Colors.blue.shade700,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                             const SizedBox(height: 16.0),
 
@@ -76,30 +84,38 @@ class _LoginPageState extends State<LoginPage> {
                             Text(
                               'Welcome Back',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8.0),
                             Text(
                               'Sign in to continue',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 32.0),
 
+                            if (_errorMessage != null) ...[
+                              Text(
+                                _errorMessage!,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16.0),
+                            ],
+
                             // Username Field
                             TextFormField(
                               controller: _usernameController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'Username',
                                 hintText: 'Enter your username',
-                                prefixIcon: Icon(Icons.person_outline, color: Colors.blue.shade700),
+                                prefixIcon: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary),
                                 filled: true,
                                 fillColor: Colors.white,
                                 border: OutlineInputBorder(
@@ -136,14 +152,16 @@ class _LoginPageState extends State<LoginPage> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: !_isPasswordVisible,
+                              keyboardType: TextInputType.visiblePassword,
+                              textInputAction: TextInputAction.done,
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 hintText: 'Enter your password',
-                                prefixIcon: Icon(Icons.lock_outline, color: Colors.blue.shade700),
+                                prefixIcon: Icon(Icons.lock_outline, color: Theme.of(context).colorScheme.primary),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -192,8 +210,8 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                                 child: Text(
                                   'Forgot Password?',
-                                  style: TextStyle(
-                                    color: Colors.blue.shade700,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -205,8 +223,8 @@ class _LoginPageState extends State<LoginPage> {
                             ElevatedButton(
                               onPressed: _isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade700,
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                 minimumSize: const Size(double.infinity, 56),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -214,20 +232,17 @@ class _LoginPageState extends State<LoginPage> {
                                 elevation: 2,
                               ),
                               child: _isLoading
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       height: 20,
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                                       ),
                                     )
-                                  : const Text(
+                                  : Text(
                                       'Login',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: Theme.of(context).textTheme.labelLarge,
                                     ),
                             ),
                             const SizedBox(height: 24.0),
@@ -238,7 +253,9 @@ class _LoginPageState extends State<LoginPage> {
                               children: [
                                 Text(
                                   "Don't have an account? ",
-                                  style: TextStyle(color: Colors.grey.shade600),
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -251,8 +268,8 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   child: Text(
                                     'Sign Up',
-                                    style: TextStyle(
-                                      color: Colors.blue.shade700,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),

@@ -1,4 +1,6 @@
+import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,26 +21,24 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.background,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'AMLS',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
+            icon: Icon(Icons.notifications_outlined, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {},
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
             onSelected: (value) {
               if (value == 'logout') {
                 showDialog(
@@ -54,9 +54,9 @@ class _HomePageState extends State<HomePage> {
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.pushReplacementNamed(context, '/login');
+                          context.read<AuthCubit>().logout();
                         },
-                        child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                        child: Text('Logout', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ),
                     ],
                   ),
@@ -64,13 +64,13 @@ class _HomePageState extends State<HomePage> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20),
-                    SizedBox(width: 12),
-                    Text('Logout'),
+                    Icon(Icons.logout, size: 20, color: Theme.of(context).colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Logout', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                   ],
                 ),
               ),
@@ -78,6 +78,63 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(width: 8),
         ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AMLS',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                  ),
+                  Text(
+                    'Welcome, $userName',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.home, color: Theme.of(context).colorScheme.onSurface),
+              title: Text('Home', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.onSurface),
+              title: Text('Maintenance Logs', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/logs');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.warning, color: Theme.of(context).colorScheme.onSurface),
+              title: Text('Issues & Reports', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/issues');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+              title: Text('Logout', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(context);
+                context.read<AuthCubit>().logout();
+              },
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -87,13 +144,12 @@ class _HomePageState extends State<HomePage> {
             children: [
               Text(
                 'ATM Maintenance System',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.black87,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Summary Cards
               Row(
                 children: [
@@ -102,6 +158,7 @@ class _HomePageState extends State<HomePage> {
                       'Total Logs',
                       totalLogs.toString(),
                       Icons.assignment_outlined,
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -110,6 +167,7 @@ class _HomePageState extends State<HomePage> {
                       'Active Issues',
                       activeIssues.toString(),
                       Icons.warning_amber_outlined,
+                      Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -122,6 +180,7 @@ class _HomePageState extends State<HomePage> {
                       'In Progress',
                       inProgressLogs.toString(),
                       Icons.pending_outlined,
+                      Theme.of(context).colorScheme.tertiary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -130,6 +189,7 @@ class _HomePageState extends State<HomePage> {
                       'Critical',
                       criticalIssues.toString(),
                       Icons.error_outline,
+                      Theme.of(context).colorScheme.errorContainer,
                     ),
                   ),
                 ],
@@ -142,7 +202,7 @@ class _HomePageState extends State<HomePage> {
                 'Maintenance Logs',
                 'View all maintenance activities',
                 Icons.assignment_outlined,
-                Colors.blue,
+                Theme.of(context).colorScheme.primary,
                 () => Navigator.pushNamed(context, '/logs'),
               ),
               const SizedBox(height: 16),
@@ -151,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                 'Issues & Reports',
                 'View all reported issues',
                 Icons.warning_amber_outlined,
-                Colors.orange,
+                Theme.of(context).colorScheme.error,
                 () => Navigator.pushNamed(context, '/issues'),
               ),
             ],
@@ -164,21 +224,21 @@ class _HomePageState extends State<HomePage> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Add New'),
+              title: Text('Add New', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.assignment),
-                    title: const Text('Maintenance Log'),
+                    leading: Icon(Icons.assignment, color: Theme.of(context).colorScheme.primary),
+                    title: Text('Maintenance Log', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     onTap: () {
                       Navigator.pop(context);
                       // Navigate to add log screen
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.warning),
-                    title: const Text('Issue Report'),
+                    leading: Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
+                    title: Text('Issue Report', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     onTap: () {
                       Navigator.pop(context);
                       // Navigate to add issue screen
@@ -189,23 +249,23 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
-        backgroundColor: Colors.black87,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
 
-  Widget _buildSummaryCard(String title, String count, IconData icon) {
+  Widget _buildSummaryCard(String title, String count, IconData icon, Color iconColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.black87, size: 24),
+          Icon(icon, color: iconColor, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -213,18 +273,15 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   count,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -249,12 +306,12 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -277,24 +334,21 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 20),
+            Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
           ],
         ),
       ),

@@ -67,31 +67,29 @@ class _IssuesScreenState extends State<IssuesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.background,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Issues & Reports',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
+            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               // Implement search functionality
             },
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               _showMoreOptions(); // New function for more options
             },
@@ -107,7 +105,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
               children: [
                 DropdownButton<String>(
                   value: selectedFilter,
-                  icon: const Icon(Icons.filter_list, color: Colors.black87),
+                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
                   underline: Container(), // Remove the underline
                   onChanged: (String? newValue) {
                     setState(() {
@@ -117,7 +115,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                   items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     );
                   }).toList(),
                 ),
@@ -131,13 +129,12 @@ class _IssuesScreenState extends State<IssuesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.warning_amber_outlined, size: 64, color: Colors.grey.shade400),
+                        Icon(Icons.warning_amber_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
                         const SizedBox(height: 16),
                         Text(
                           'No issues found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -167,8 +164,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
             });
           }
         },
-        backgroundColor: Colors.black87,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -254,16 +251,16 @@ class _IssuesScreenState extends State<IssuesScreen> {
     Color priorityColor;
     switch (issue['priority']) {
       case 'Critical':
-        priorityColor = Colors.red;
+        priorityColor = Theme.of(context).colorScheme.error;
         break;
       case 'High':
-        priorityColor = Colors.orange;
+        priorityColor = Theme.of(context).colorScheme.errorContainer;
         break;
       case 'Medium':
-        priorityColor = Colors.blue;
+        priorityColor = Theme.of(context).colorScheme.tertiary;
         break;
       default:
-        priorityColor = Colors.green;
+        priorityColor = Theme.of(context).colorScheme.primary;
     }
 
     final isResolved = issue['status'] == 'Resolved';
@@ -271,7 +268,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () async {
@@ -302,7 +299,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
+              border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,10 +309,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
                   children: [
                     Text(
                       issue['atmId'],
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Container(
@@ -327,8 +322,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       ),
                       child: Text(
                         issue['priority'],
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: priorityColor,
                         ),
@@ -339,18 +333,15 @@ class _IssuesScreenState extends State<IssuesScreen> {
                 const SizedBox(height: 8),
                 Text(
                   issue['location'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   issue['issue'],
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -359,30 +350,29 @@ class _IssuesScreenState extends State<IssuesScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                        Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                         const SizedBox(width: 6),
                         Text(
                           'Reported: ${issue['reportedDate']}',
-                          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isResolved ? Colors.green.shade50 : Colors.grey.shade100,
+                        color: isResolved ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: isResolved ? Colors.green.shade300 : Colors.grey.shade300,
+                          color: isResolved ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
                           width: 1,
                         ),
                       ),
                       child: Text(
                         issue['status'],
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isResolved ? Colors.green.shade700 : Colors.grey.shade700,
+                          color: isResolved ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),

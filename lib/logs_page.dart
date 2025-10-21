@@ -72,31 +72,29 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.background,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Maintenance Logs',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
+            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               // Implement search functionality
             },
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {
               _showMoreOptions(); // New function for more options
             },
@@ -112,7 +110,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
               children: [
                 DropdownButton<String>(
                   value: selectedFilter,
-                  icon: const Icon(Icons.filter_list, color: Colors.black87),
+                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
                   underline: Container(), // Remove the underline
                   onChanged: (String? newValue) {
                     setState(() {
@@ -122,7 +120,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                   items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     );
                   }).toList(),
                 ),
@@ -136,13 +134,12 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.assignment_outlined, size: 64, color: Colors.grey.shade400),
+                        Icon(Icons.assignment_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
                         const SizedBox(height: 16),
                         Text(
                           'No logs found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -172,8 +169,8 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
             });
           }
         },
-        backgroundColor: Colors.black87,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -184,7 +181,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () async {
@@ -215,7 +212,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
+              border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,28 +222,25 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                   children: [
                     Text(
                       log['atmId'],
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isCompleted ? Colors.green.shade50 : Colors.orange.shade50,
+                        color: isCompleted ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.tertiaryContainer,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isCompleted ? Colors.green.shade300 : Colors.orange.shade300,
+                          color: isCompleted ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.tertiary,
                           width: 1,
                         ),
                       ),
                       child: Text(
                         log['status'],
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isCompleted ? Colors.green.shade700 : Colors.orange.shade700,
+                          color: isCompleted ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onTertiaryContainer,
                         ),
                       ),
                     ),
@@ -255,41 +249,40 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   log['location'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                    Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 6),
                     Text(
                       '${log['date']} at ${log['time']}',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                    Icon(Icons.person, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 6),
                     Text(
                       log['technician'],
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.build, size: 14, color: Colors.grey.shade600),
+                    Icon(Icons.build, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 6),
                     Text(
                       log['type'],
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -306,14 +299,14 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Log'),
-          content: const Text('Are you sure you want to delete this log?'),
+          title: Text('Delete Log', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text('Are you sure you want to delete this log?', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Dismiss dialog
               },
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
             ),
             TextButton(
               onPressed: () {
@@ -322,7 +315,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                 });
                 Navigator.of(context).pop(); // Dismiss dialog
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
             ),
           ],
         );
@@ -340,19 +333,19 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         0,
       ),
       items: <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          value: 'settings',
-          child: Text('Settings'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'help',
-          child: Text('Help'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'about',
-          child: Text('About'),
-        ),
-      ],
+        PopupMenuEntry<String> _buildPopupMenuItem(String value, String text) {
+          return PopupMenuItem<String>(
+            value: value,
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+          );
+        }
+
+        return [
+          _buildPopupMenuItem('settings', 'Settings'),
+          _buildPopupMenuItem('help', 'Help'),
+          _buildPopupMenuItem('about', 'About'),
+        ];
+      },
     ).then((value) {
       if (value != null) {
         // Handle selected option
