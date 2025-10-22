@@ -8,7 +8,7 @@ class IssueInitial extends IssueState {}
 class IssueLoading extends IssueState {}
 
 class IssueLoaded extends IssueState {
-  final List<Map<String, dynamic>> issues;
+  final List<Issue> issues;
 
   IssueLoaded(this.issues);
 }

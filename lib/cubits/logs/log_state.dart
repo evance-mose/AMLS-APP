@@ -8,7 +8,7 @@ class LogInitial extends LogState {}
 class LogLoading extends LogState {}
 
 class LogLoaded extends LogState {
-  final List<Map<String, dynamic>> logs;
+  final List<Log> logs;
 
   LogLoaded(this.logs);
 }

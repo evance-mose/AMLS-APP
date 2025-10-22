@@ -10,8 +10,8 @@ enum IssueCategory {
   recycling_module_errors,
   other,
 }
-enum IssueStatus { pending, in_progress, acknowledged, resolved, closed }
-enum IssuePriority { low, medium, high }
+enum IssueStatus { pending, open, in_progress, assigned, acknowledged, resolved, closed }
+enum IssuePriority { low, medium, high, critical }
 
 class Issue {
   final int id;
@@ -23,6 +23,7 @@ class Issue {
   final String? description;
   final IssueStatus status;
   final IssuePriority priority;
+  final DateTime reportedDate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,6 +37,7 @@ class Issue {
     this.description,
     this.status = IssueStatus.pending,
     this.priority = IssuePriority.low,
+    required this.reportedDate,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -60,6 +62,7 @@ class Issue {
         (e) => e.toString().split('.').last == json['priority'],
         orElse: () => IssuePriority.low,
       ),
+      reportedDate: DateTime.parse(json['reported_date'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -76,6 +79,7 @@ class Issue {
       'description': description,
       'status': status.toString().split('.').last,
       'priority': priority.toString().split('.').last,
+      'reported_date': reportedDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

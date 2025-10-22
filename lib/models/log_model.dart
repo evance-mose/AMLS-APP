@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum LogStatus { pending, in_progress, resolved, closed }
+enum LogStatus { pending, in_progress, completed, resolved, closed }
 enum LogPriority { low, medium, high }
 
 class Log {
@@ -8,6 +8,8 @@ class Log {
   final int? userId;
   final int? issueId;
   final String? actionTaken;
+  final String atmId;
+  final String location;
   final LogStatus status;
   final LogPriority priority;
   final DateTime createdAt;
@@ -18,6 +20,8 @@ class Log {
     this.userId,
     this.issueId,
     this.actionTaken,
+    required this.atmId,
+    required this.location,
     this.status = LogStatus.pending,
     this.priority = LogPriority.low,
     required this.createdAt,
@@ -30,6 +34,8 @@ class Log {
       userId: json['user_id'] as int?,
       issueId: json['issue_id'] as int?,
       actionTaken: json['action_taken'] as String?,
+      atmId: json['atm_id'] as String,
+      location: json['location'] as String,
       status: LogStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
         orElse: () => LogStatus.pending,
@@ -49,6 +55,8 @@ class Log {
       'user_id': userId,
       'issue_id': issueId,
       'action_taken': actionTaken,
+      'atm_id': atmId,
+      'location': location,
       'status': status.toString().split('.').last,
       'priority': priority.toString().split('.').last,
       'created_at': createdAt.toIso8601String(),

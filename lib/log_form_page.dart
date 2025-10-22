@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:amls/models/log_model.dart'; // Import the Log model
+
+extension StringExtension on String {
+  String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
+}
 
 class LogFormPage extends StatefulWidget {
-  final Map<String, dynamic>? log;
+  final Log? log; // Change type to Log
   final bool isViewOnly;
 
   const LogFormPage({super.key, this.log, this.isViewOnly = false});
@@ -19,25 +24,29 @@ class _LogFormPageState extends State<LogFormPage> {
   late TextEditingController _technicianController;
   late String _selectedStatus;
   late String _selectedType;
+  late String _actionTakenController;
+  late String _selectedPriority; // New field for priority
 
-  final List<String> _statuses = ['Completed', 'In Progress'];
+  final List<String> _statuses = LogStatus.values.map((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized()).toList();
   final List<String> _types = [
     'Routine Check',
     'Cash Replenishment',
     'Hardware Repair',
     'Software Update'
   ];
+  final List<String> _priorities = LogPriority.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
 
   @override
   void initState() {
     super.initState();
-    _atmIdController = TextEditingController(text: widget.log?['atmId'] ?? '');
-    _locationController = TextEditingController(text: widget.log?['location'] ?? '');
-    _dateController = TextEditingController(text: widget.log?['date'] ?? '');
-    _timeController = TextEditingController(text: widget.log?['time'] ?? '');
-    _technicianController = TextEditingController(text: widget.log?['technician'] ?? '');
-    _selectedStatus = widget.log?['status'] ?? _statuses.first;
-    _selectedType = widget.log?['type'] ?? _types.first;
+    _atmIdController = TextEditingController(text: widget.log?.atmId ?? '');
+    _locationController = TextEditingController(text: widget.log?.location ?? '');
+    _dateController = TextEditingController(text: widget.log?.createdAt.toIso8601String().split('T').first ?? '');
+    _timeController = TextEditingController(text: '${widget.log?.createdAt.hour.toString().padLeft(2, '0')}:${widget.log?.createdAt.minute.toString().padLeft(2, '0')}' ?? '');
+    _technicianController = TextEditingController(text: widget.log?.userId != null ? 'Technician ${widget.log?.userId}' : ''); // Placeholder
+    _selectedStatus = widget.log?.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _statuses.first;
+    _selectedType = widget.log?.actionTaken ?? _types.first; // Use actionTaken as type
+    _selectedPriority = widget.log?.priority.toString().split('.').last.toCapitalized() ?? _priorities.first;
   }
 
   @override
@@ -52,15 +61,17 @@ class _LogFormPageState extends State<LogFormPage> {
 
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
-      final newLog = {
-        'atmId': _atmIdController.text,
-        'location': _locationController.text,
-        'date': _dateController.text,
-        'time': _timeController.text,
-        'technician': _technicianController.text,
-        'status': _selectedStatus,
-        'type': _selectedType,
-      };
+      final newLog = Log(
+        id: widget.log?.id ?? 0, // ID generation is handled by Cubit
+        atmId: _atmIdController.text,
+        location: _locationController.text,
+        actionTaken: _selectedType, // Use selectedType for actionTaken
+        status: LogStatus.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedStatus),
+        priority: LogPriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
+        createdAt: widget.log?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        userId: 1, // Dummy user ID
+      );
       Navigator.pop(context, newLog);
     }
   }
@@ -239,7 +250,7 @@ class _LogFormPageState extends State<LogFormPage> {
                   ),
                   onPressed: () async {
                     Navigator.pop(context);
-                    final updatedLog = await Navigator.push<Map<String, dynamic>>(
+                    final updatedLog = await Navigator.push<Log?>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => LogFormPage(log: widget.log),
@@ -296,38 +307,28 @@ class _LogFormPageState extends State<LogFormPage> {
                     
                     const SizedBox(height: 32),
                     
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _dateController,
-                            labelText: 'Date',
-                            hintText: 'YYYY-MM-DD',
-                            icon: Icons.calendar_today_outlined,
-                            validatorMessage: 'Please enter a date',
-                            onTap: widget.isViewOnly ? null : _selectDate,
-                            readOnly: true,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTextFormField(
-                            controller: _timeController,
-                            labelText: 'Time',
-                            hintText: 'HH:MM',
-                            icon: Icons.access_time_outlined,
-                            validatorMessage: 'Please enter a time',
-                            onTap: widget.isViewOnly ? null : _selectTime,
-                            readOnly: true,
-                          ),
-                        ),
-                      ],
+                    _buildTextFormField(
+                      controller: _dateController,
+                      labelText: 'Date',
+                      hintText: 'YYYY-MM-DD',
+                      icon: Icons.calendar_today_outlined,
+                      validatorMessage: 'Please enter a date',
+                      onTap: widget.isViewOnly ? null : _selectDate,
+                      readOnly: true,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildTextFormField(
+                      controller: _timeController,
+                      labelText: 'Time',
+                      hintText: 'HH:MM',
+                      icon: Icons.access_time_outlined,
+                      validatorMessage: 'Please enter a time',
+                      onTap: widget.isViewOnly ? null : _selectTime,
+                      readOnly: true,
                     ),
                     
                     const SizedBox(height: 32),
                 
-                    const SizedBox(height: 16),
                     _buildTextFormField(
                       controller: _technicianController,
                       labelText: 'Technician',
@@ -362,6 +363,21 @@ class _LogFormPageState extends State<LogFormPage> {
                           : (String? newValue) {
                               setState(() {
                                 _selectedStatus = newValue!;
+                              });
+                            },
+                      readOnly: widget.isViewOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDropdownFormField(
+                      value: _selectedPriority,
+                      labelText: 'Priority',
+                      icon: Icons.priority_high,
+                      items: _priorities,
+                      onChanged: widget.isViewOnly
+                          ? null
+                          : (String? newValue) {
+                              setState(() {
+                                _selectedPriority = newValue!;
                               });
                             },
                       readOnly: widget.isViewOnly,
@@ -427,6 +443,7 @@ class _LogFormPageState extends State<LogFormPage> {
       ),
     );
   }
+
   Widget _buildTextFormField({
     required TextEditingController controller,
     required String labelText,
@@ -554,11 +571,11 @@ class _LogFormPageState extends State<LogFormPage> {
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -582,4 +599,5 @@ class _LogFormPageState extends State<LogFormPage> {
       ),
     );
   }
+
 }

@@ -2,6 +2,7 @@ import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/issue_form_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:amls/models/issue_model.dart'; // Import the Issue model
 
 class IssuesScreen extends StatefulWidget {
   const IssuesScreen({super.key});
@@ -11,60 +12,17 @@ class IssuesScreen extends StatefulWidget {
 }
 
 class _IssuesScreenState extends State<IssuesScreen> {
-  // Sample data - replace with actual data from your backend
-  // final List<Map<String, dynamic>> issues = [
-  //   {
-  //     'atmId': 'ATM-003',
-  //     'location': 'City Center Branch',
-  //     'issue': 'Card reader malfunction',
-  //     'priority': 'High',
-  //     'reportedDate': '2024-10-21',
-  //     'status': 'Open',
-  //   },
-  //   {
-  //     'atmId': 'ATM-007',
-  //     'location': 'University Campus',
-  //     'issue': 'Cash dispenser error',
-  //     'priority': 'Critical',
-  //     'reportedDate': '2024-10-21',
-  //     'status': 'Assigned',
-  //   },
-  //   {
-  //     'atmId': 'ATM-009',
-  //     'location': 'Hospital Branch',
-  //     'issue': 'Screen display issue',
-  //     'priority': 'Medium',
-  //     'reportedDate': '2024-10-20',
-  //     'status': 'Open',
-  //   },
-  //   {
-  //     'atmId': 'ATM-015',
-  //     'location': 'Train Station',
-  //     'issue': 'Receipt printer jam',
-  //     'priority': 'Low',
-  //     'reportedDate': '2024-10-20',
-  //     'status': 'Resolved',
-  //   },
-  //   {
-  //     'atmId': 'ATM-011',
-  //     'location': 'Shopping Plaza',
-  //     'issue': 'Network connectivity issue',
-  //     'priority': 'High',
-  //     'reportedDate': '2024-10-19',
-  //     'status': 'Assigned',
-  //   },
-  // ];
-
   String selectedFilter = 'All';
 
   final List<String> _filterOptions = ['All', 'Critical', 'High', 'Medium', 'Low'];
 
-  List<Map<String, dynamic>> get filteredIssues {
+  // This getter should now work directly with Issue objects from the cubit state
+  List<Issue> get filteredIssues {
     final currentIssues = (context.read<IssueCubit>().state as IssueLoaded).issues;
     if (selectedFilter == 'All') {
       return currentIssues;
     }
-    return currentIssues.where((issue) => issue['priority'] == selectedFilter).toList();
+    return currentIssues.where((issue) => issue.priority.toString().split('.').last.toCapitalized() == selectedFilter).toList();
   }
 
   @override
@@ -87,25 +45,26 @@ class _IssuesScreenState extends State<IssuesScreen> {
         }
       },
       builder: (context, state) {
-        List<Map<String, dynamic>> displayIssues = [];
+        List<Issue> displayIssues = [];
         bool isLoading = false;
 
         if (state is IssueLoaded) {
           displayIssues = state.issues;
         } else if (state is IssueLoading) {
           isLoading = true;
-          displayIssues = (context.read<IssueCubit>().state is IssueLoaded)
-              ? (context.read<IssueCubit>().state as IssueLoaded).issues
-              : [];
+          displayIssues = [];
+        } else if (state is IssueInitial) {
+          isLoading = true;
+          displayIssues = [];
         }
 
         final filteredDisplayIssues = displayIssues.where((issue) {
           if (selectedFilter == 'All') return true;
-          return issue['priority'] == selectedFilter;
+          return issue.priority.toString().split('.').last.toCapitalized() == selectedFilter;
         }).toList();
 
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: colorScheme.background,
           appBar: AppBar(
             elevation: 0,
             backgroundColor: Colors.transparent,
@@ -312,7 +271,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
-              final newIssue = await Navigator.push<Map<String, dynamic>>(
+              final newIssue = await Navigator.push<Issue?>(
                 context,
                 MaterialPageRoute(builder: (context) => const IssueFormPage()),
               );
@@ -332,25 +291,25 @@ class _IssuesScreenState extends State<IssuesScreen> {
     );
   }
 
-  Widget _buildIssueCard(Map<String, dynamic> issue) {
+  Widget _buildIssueCard(Issue issue) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     Color priorityColor;
     Color startColor;
     Color endColor;
-    switch (issue['priority']) {
-      case 'Critical':
+    switch (issue.priority) {
+      case IssuePriority.critical:
         priorityColor = Colors.red.shade600;
         startColor = Colors.red.shade400;
         endColor = Colors.red.shade600;
         break;
-      case 'High':
+      case IssuePriority.high:
         priorityColor = Colors.deepOrange.shade600;
         startColor = Colors.deepOrange.shade400;
         endColor = Colors.deepOrange.shade600;
         break;
-      case 'Medium':
+      case IssuePriority.medium:
         priorityColor = Colors.amber.shade600;
         startColor = Colors.amber.shade400;
         endColor = Colors.amber.shade600;
@@ -361,7 +320,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
         endColor = Colors.green.shade600;
     }
 
-    final isOpen = issue['status'] == 'Open' || issue['status'] == 'Assigned';
+    final isOpen = issue.status == IssueStatus.open || issue.status == IssueStatus.assigned;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -380,7 +339,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
               if (result.containsKey('action') && result['action'] == 'delete') {
                 _confirmDeleteIssue(issue);
               } else {
-                context.read<IssueCubit>().updateIssue(issue, result);
+                // Assuming result is an Issue object if not a delete action
+                context.read<IssueCubit>().updateIssue(issue, result as Issue);
               }
             }
           },
@@ -417,14 +377,14 @@ class _IssuesScreenState extends State<IssuesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  issue['atmId'],
+                                  issue.atmId,
                                   style: textTheme.titleMedium?.copyWith(
                                     color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  issue['location'],
+                                  issue.location,
                                   style: textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -465,7 +425,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            issue['priority'],
+                            issue.priority.toString().split('.').last.toCapitalized(),
                             style: textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -494,7 +454,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       child: _buildInfoItem(
                         Icons.bug_report_outlined,
                         'Issue',
-                        issue['issue'],
+                        issue.description ?? 'N/A',
                         colorScheme,
                         textTheme,
                       ),
@@ -509,7 +469,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       child: _buildInfoItem(
                         Icons.calendar_today_outlined,
                         'Reported Date',
-                        issue['reportedDate'],
+                        issue.reportedDate.toIso8601String().split('T').first,
                         colorScheme,
                         textTheme,
                       ),
@@ -525,7 +485,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       child: _buildInfoItem(
                         Icons.assignment_ind_outlined,
                         'Status',
-                        issue['status'],
+                        issue.status.toString().split('.').last.toCapitalized(),
                         colorScheme,
                         textTheme,
                       ),
@@ -540,7 +500,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       child: _buildInfoItem(
                         Icons.person_outline,
                         'Assigned To',
-                        issue['assignedTo'] ?? 'N/A', // Assuming 'assignedTo' might be null
+                        issue.assignedTo != null ? 'Technician ${issue.assignedTo}' : 'N/A',
                         colorScheme,
                         textTheme,
                       ),
@@ -600,7 +560,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
     );
   }
 
-  void _confirmDeleteIssue(Map<String, dynamic> issue) {
+  void _confirmDeleteIssue(Issue issue) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 

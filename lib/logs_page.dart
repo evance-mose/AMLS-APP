@@ -2,6 +2,7 @@ import 'package:amls/cubits/logs/log_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/log_form_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:amls/models/log_model.dart'; // Import the Log model
 
 class MaintenanceLogsScreen extends StatefulWidget {
   const MaintenanceLogsScreen({super.key});
@@ -45,21 +46,22 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         }
       },
       builder: (context, state) {
-        List<Map<String, dynamic>> displayLogs = [];
+        List<Log> displayLogs = [];
         bool isLoading = false;
 
         if (state is LogLoaded) {
           displayLogs = state.logs;
         } else if (state is LogLoading) {
           isLoading = true;
-          displayLogs = (context.read<LogCubit>().state is LogLoaded)
-              ? (context.read<LogCubit>().state as LogLoaded).logs
-              : [];
+          displayLogs = [];
+        } else if (state is LogInitial) {
+          isLoading = true;
+          displayLogs = [];
         }
 
         final filteredDisplayLogs = displayLogs.where((log) {
           if (selectedFilter == 'All') return true;
-          return log['status'] == selectedFilter;
+          return log.status.toString().split('.').last == selectedFilter;
         }).toList();
 
         return Scaffold(
@@ -270,7 +272,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
-              final newLog = await Navigator.push<Map<String, dynamic>>(
+              final newLog = await Navigator.push<Log?>(
                 context,
                 MaterialPageRoute(builder: (context) => const LogFormPage()),
               );
@@ -290,10 +292,10 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     );
   }
 
-  Widget _buildMaintenanceLogCard(Map<String, dynamic> log) {
+  Widget _buildMaintenanceLogCard(Log log) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isCompleted = log['status'] == 'Completed';
+    final isCompleted = log.status == LogStatus.completed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -312,7 +314,8 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
               if (result.containsKey('action') && result['action'] == 'delete') {
                 _confirmDeleteLog(log);
               } else {
-                context.read<LogCubit>().updateLog(log, result);
+                // Assuming result is a Log object if not a delete action
+                context.read<LogCubit>().updateLog(log, result as Log);
               }
             }
           },
@@ -349,14 +352,14 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  log['atmId'],
+                                  log.atmId,
                                   style: textTheme.titleMedium?.copyWith(
                                     color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  log['location'],
+                                  log.location,
                                   style: textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -398,7 +401,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            log['status'],
+                            log.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized(),
                             style: textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -427,7 +430,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       child: _buildInfoItem(
                         Icons.calendar_today_outlined,
                         'Date',
-                        log['date'],
+                        log.createdAt.toIso8601String().split('T').first,
                         colorScheme,
                         textTheme,
                       ),
@@ -442,7 +445,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       child: _buildInfoItem(
                         Icons.access_time_outlined,
                         'Time',
-                        log['time'],
+                        '${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
                         colorScheme,
                         textTheme,
                       ),
@@ -458,7 +461,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       child: _buildInfoItem(
                         Icons.person_outline,
                         'Technician',
-                        log['technician'],
+                        log.userId != null ? 'Technician ${log.userId}' : 'N/A', // Placeholder for technician name
                         colorScheme,
                         textTheme,
                       ),
@@ -473,7 +476,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       child: _buildInfoItem(
                         Icons.build_outlined,
                         'Type',
-                        log['type'],
+                        log.actionTaken ?? 'N/A',
                         colorScheme,
                         textTheme,
                       ),
@@ -533,7 +536,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     );
   }
 
-  void _confirmDeleteLog(Map<String, dynamic> log) {
+  void _confirmDeleteLog(Log log) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -652,4 +655,5 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         break;
     }
   }
+
 }
