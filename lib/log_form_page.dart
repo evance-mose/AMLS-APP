@@ -39,11 +39,11 @@ class _LogFormPageState extends State<LogFormPage> {
   @override
   void initState() {
     super.initState();
-    _atmIdController = TextEditingController(text: widget.log?.atmId ?? '');
-    _locationController = TextEditingController(text: widget.log?.location ?? '');
+    _atmIdController = TextEditingController(text: widget.log?.issue?.atmId ?? '');
+    _locationController = TextEditingController(text: widget.log?.issue?.location ?? '');
     _dateController = TextEditingController(text: widget.log?.createdAt.toIso8601String().split('T').first ?? '');
     _timeController = TextEditingController(text: '${widget.log?.createdAt.hour.toString().padLeft(2, '0')}:${widget.log?.createdAt.minute.toString().padLeft(2, '0')}' ?? '');
-    _technicianController = TextEditingController(text: widget.log?.userId != null ? 'Technician ${widget.log?.userId}' : ''); // Placeholder
+    _technicianController = TextEditingController(text: widget.log?.user?.name ?? ''); // Use user name
     _selectedStatus = widget.log?.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _statuses.first;
     _selectedType = widget.log?.actionTaken ?? _types.first; // Use actionTaken as type
     _selectedPriority = widget.log?.priority.toString().split('.').last.toCapitalized() ?? _priorities.first;
@@ -63,14 +63,15 @@ class _LogFormPageState extends State<LogFormPage> {
     if (_formKey.currentState!.validate()) {
       final newLog = Log(
         id: widget.log?.id ?? 0, // ID generation is handled by Cubit
-        atmId: _atmIdController.text,
-        location: _locationController.text,
+        userId: widget.log?.userId ?? 1, // Use existing userId or default
+        issueId: widget.log?.issueId,
         actionTaken: _selectedType, // Use selectedType for actionTaken
         status: LogStatus.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedStatus),
         priority: LogPriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
         createdAt: widget.log?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
-        userId: 1, // Dummy user ID
+        user: widget.log?.user,
+        issue: widget.log?.issue,
       );
       Navigator.pop(context, newLog);
     }

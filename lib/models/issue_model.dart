@@ -62,7 +62,7 @@ class Issue {
         (e) => e.toString().split('.').last == json['priority'],
         orElse: () => IssuePriority.low,
       ),
-      reportedDate: DateTime.parse(json['reported_date'] as String),
+      reportedDate: DateTime.parse(json['created_at'] as String), // Use created_at as reported date
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );

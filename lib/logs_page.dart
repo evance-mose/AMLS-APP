@@ -352,14 +352,14 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  log.atmId,
+                                  log.issue?.atmId ?? 'N/A',
                                   style: textTheme.titleMedium?.copyWith(
                                     color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  log.location,
+                                  log.issue?.location ?? 'N/A',
                                   style: textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -461,7 +461,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       child: _buildInfoItem(
                         Icons.person_outline,
                         'Technician',
-                        log.userId != null ? 'Technician ${log.userId}' : 'N/A', // Placeholder for technician name
+                        log.user?.name ?? 'N/A',
                         colorScheme,
                         textTheme,
                       ),
