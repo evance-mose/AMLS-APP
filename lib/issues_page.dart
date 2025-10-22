@@ -75,6 +75,9 @@ class _IssuesScreenState extends State<IssuesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return BlocConsumer<IssueCubit, IssueState>(
       listener: (context, state) {
         if (state is IssueError) {
@@ -105,90 +108,209 @@ class _IssuesScreenState extends State<IssuesScreen> {
           backgroundColor: Theme.of(context).colorScheme.background,
           appBar: AppBar(
             elevation: 0,
-            backgroundColor: Theme.of(context).colorScheme.background,
+            backgroundColor: Colors.transparent,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Text(
-              'Issues & Reports',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Issues & Reports',
+                  style: textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${filteredDisplayIssues.length} ${filteredDisplayIssues.length == 1 ? 'issue' : 'issues'}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
             actions: [
               IconButton(
-                icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.search, color: colorScheme.onSurface, size: 20),
+                ),
                 onPressed: () {
                   // Implement search functionality
                 },
               ),
               IconButton(
-                icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
-                onPressed: () {
-                  _showMoreOptions(); // New function for more options
-                },
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
+                ),
+                onPressed: _showMoreOptions,
               ),
+              const SizedBox(width: 8),
             ],
           ),
           body: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              // Filter Section
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    DropdownButton<String>(
-                      value: selectedFilter,
-                      icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
-                      underline: Container(), // Remove the underline
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedFilter = newValue!;
-                        });
-                      },
-                      items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                        );
-                      }).toList(),
+                    Icon(Icons.filter_list, color: colorScheme.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Filter:',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filterOptions.map((option) {
+                            final isSelected = selectedFilter == option;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(option),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    selectedFilter = option;
+                                  });
+                                },
+                                backgroundColor: colorScheme.surfaceVariant,
+                                selectedColor: colorScheme.primaryContainer,
+                                labelStyle: textTheme.bodySmall?.copyWith(
+                                  color: isSelected 
+                                      ? colorScheme.onPrimaryContainer 
+                                      : colorScheme.onSurfaceVariant,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected 
+                                        ? colorScheme.primary 
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+              
               // Issues List
               Expanded(
                 child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Loading issues...',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     : filteredDisplayIssues.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.warning_amber_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
-                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceVariant.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.warning_amber_outlined,
+                                    size: 64,
+                                    color: colorScheme.outline,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
                                 Text(
                                   'No issues found',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  style: textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Start by creating a new issue',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: filteredDisplayIssues.length,
-                            itemBuilder: (context, index) {
-                              final issue = filteredDisplayIssues[index];
-                              return _buildIssueCard(issue);
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              context.read<IssueCubit>().fetchIssues();
                             },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                              itemCount: filteredDisplayIssues.length,
+                              itemBuilder: (context, index) {
+                                final issue = filteredDisplayIssues[index];
+                                return _buildIssueCard(issue);
+                              },
+                            ),
                           ),
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
               final newIssue = await Navigator.push<Map<String, dynamic>>(
                 context,
@@ -199,34 +321,343 @@ class _IssuesScreenState extends State<IssuesScreen> {
                 context.read<IssueCubit>().addIssue(newIssue);
               }
             },
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            icon: const Icon(Icons.add),
+            label: const Text('Report Issue'),
+            elevation: 4,
           ),
         );
       },
     );
   }
 
+  Widget _buildIssueCard(Map<String, dynamic> issue) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    Color priorityColor;
+    Color startColor;
+    Color endColor;
+    switch (issue['priority']) {
+      case 'Critical':
+        priorityColor = Colors.red.shade600;
+        startColor = Colors.red.shade400;
+        endColor = Colors.red.shade600;
+        break;
+      case 'High':
+        priorityColor = Colors.deepOrange.shade600;
+        startColor = Colors.deepOrange.shade400;
+        endColor = Colors.deepOrange.shade600;
+        break;
+      case 'Medium':
+        priorityColor = Colors.amber.shade600;
+        startColor = Colors.amber.shade400;
+        endColor = Colors.amber.shade600;
+        break;
+      default:
+        priorityColor = Colors.green.shade600; // Low priority or other
+        startColor = Colors.green.shade400;
+        endColor = Colors.green.shade600;
+    }
+
+    final isOpen = issue['status'] == 'Open' || issue['status'] == 'Assigned';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            final result = await Navigator.push<Map<String, dynamic>>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IssueFormPage(issue: issue, isViewOnly: true),
+              ),
+            );
+
+            if (result != null) {
+              if (result.containsKey('action') && result['action'] == 'delete') {
+                _confirmDeleteIssue(issue);
+              } else {
+                context.read<IssueCubit>().updateIssue(issue, result);
+              }
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  issue['atmId'],
+                                  style: textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  issue['location'],
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isOpen
+                              ? [startColor, endColor]
+                              : [Colors.grey.shade400, Colors.grey.shade600],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: priorityColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isOpen ? Icons.priority_high : Icons.check_circle,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            issue['priority'],
+                            style: textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Divider
+                Container(
+                  height: 1,
+                  color: colorScheme.outline.withOpacity(0.2),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Info Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.bug_report_outlined,
+                        'Issue',
+                        issue['issue'],
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: colorScheme.outline.withOpacity(0.2),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.calendar_today_outlined,
+                        'Reported Date',
+                        issue['reportedDate'],
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.assignment_ind_outlined,
+                        'Status',
+                        issue['status'],
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: colorScheme.outline.withOpacity(0.2),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.person_outline,
+                        'Assigned To',
+                        issue['assignedTo'] ?? 'N/A', // Assuming 'assignedTo' might be null
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(
+    IconData icon,
+    String label,
+    String value,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                value,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _confirmDeleteIssue(Map<String, dynamic> issue) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Issue', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-          content: Text('Are you sure you want to delete this issue?', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.delete_outline, color: colorScheme.error, size: 28),
+          ),
+          title: Text(
+            'Delete Issue',
+            style: textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this issue? This action cannot be undone.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
-              },
-              child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                'Cancel',
+                style: textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 context.read<IssueCubit>().deleteIssue(issue);
-                Navigator.of(context).pop(); // Dismiss dialog
+                Navigator.of(context).pop();
               },
-              child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -238,181 +669,54 @@ class _IssuesScreenState extends State<IssuesScreen> {
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width - 60, // X position (right corner)
-        AppBar().preferredSize.height + MediaQuery.of(context).padding.top, // Y position (below AppBar)
+        MediaQuery.of(context).size.width - 60,
+        AppBar().preferredSize.height + MediaQuery.of(context).padding.top,
         0,
         0,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          value: 'settings',
-          child: Text('Settings'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'help',
-          child: Text('Help'),
-        ),
-        const PopupMenuItem<String>(
-          value: 'about',
-          child: Text('About'),
-        ),
+        _buildPopupMenuItem('settings', 'Settings', Icons.settings_outlined),
+        _buildPopupMenuItem('help', 'Help', Icons.help_outline),
+        _buildPopupMenuItem('about', 'About', Icons.info_outline),
       ],
     ).then((value) {
       if (value != null) {
-        // Handle selected option
         _handleMoreOptionSelected(value);
       }
     });
   }
 
+  PopupMenuEntry<String> _buildPopupMenuItem(String value, String text, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: colorScheme.onSurface),
+          const SizedBox(width: 12),
+          Text(
+            text,
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleMoreOptionSelected(String value) {
     switch (value) {
       case 'settings':
-        // Navigate to settings or perform action
         debugPrint('Settings selected');
         break;
       case 'help':
-        // Navigate to help or perform action
         debugPrint('Help selected');
         break;
       case 'about':
-        // Navigate to about or perform action
         debugPrint('About selected');
         break;
     }
-  }
-
-  Widget _buildIssueCard(Map<String, dynamic> issue) {
-    Color priorityColor;
-    switch (issue['priority']) {
-      case 'Critical':
-        priorityColor = Theme.of(context).colorScheme.error;
-        break;
-      case 'High':
-        priorityColor = Theme.of(context).colorScheme.errorContainer;
-        break;
-      case 'Medium':
-        priorityColor = Theme.of(context).colorScheme.tertiary;
-        break;
-      default:
-        priorityColor = Theme.of(context).colorScheme.primary;
-    }
-
-    final isResolved = issue['status'] == 'Resolved';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () async {
-            final result = await Navigator.push<Map<String, dynamic>>(
-              context,
-              MaterialPageRoute(
-                builder: (context) => IssueFormPage(issue: issue, isViewOnly: true), // View-only mode
-              ),
-            );
-
-            if (result != null) {
-              if (result.containsKey('action') && result['action'] == 'delete') {
-                // Handle delete action from the view-only form
-                _confirmDeleteIssue(issue);
-              } else {
-                // Handle update from the edit mode initiated from view-only form
-                context.read<IssueCubit>().updateIssue(issue, result);
-              }
-            }
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      issue['atmId'],
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: priorityColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: priorityColor.withOpacity(0.3), width: 1),
-                      ),
-                      child: Text(
-                        issue['priority'],
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: priorityColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  issue['location'],
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  issue['issue'],
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Reported: ${issue['reportedDate']}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isResolved ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isResolved ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        issue['status'],
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isResolved ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

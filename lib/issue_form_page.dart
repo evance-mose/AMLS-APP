@@ -18,6 +18,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
   late String _selectedPriority;
   late TextEditingController _reportedDateController;
   late String _selectedStatus;
+  late TextEditingController _assignedToController; // New controller
 
   final List<String> _priorities = ['Critical', 'High', 'Medium', 'Low'];
   final List<String> _statuses = ['Open', 'Assigned', 'Resolved'];
@@ -31,6 +32,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _selectedPriority = widget.issue?['priority'] ?? _priorities.first;
     _reportedDateController = TextEditingController(text: widget.issue?['reportedDate'] ?? '');
     _selectedStatus = widget.issue?['status'] ?? _statuses.first;
+    _assignedToController = TextEditingController(text: widget.issue?['assignedTo'] ?? ''); // Initialize new controller
   }
 
   @override
@@ -39,6 +41,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _locationController.dispose();
     _issueController.dispose();
     _reportedDateController.dispose();
+    _assignedToController.dispose(); // Dispose new controller
     super.dispose();
   }
 
@@ -48,10 +51,20 @@ class _IssueFormPageState extends State<IssueFormPage> {
       initialDate: DateTime.tryParse(_reportedDateController.text) ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
-        _reportedDateController.text = picked.toIso8601String().split('T').first; // Format as YYYY-MM-DD
+        _reportedDateController.text = picked.toIso8601String().split('T').first;
       });
     }
   }
@@ -65,138 +78,298 @@ class _IssueFormPageState extends State<IssueFormPage> {
         'priority': _selectedPriority,
         'reportedDate': _reportedDateController.text,
         'status': _selectedStatus,
+        'assignedTo': _assignedToController.text, // Save new field
       };
-      Navigator.pop(context, newIssue); // Pass the new/edited issue back
+      Navigator.pop(context, newIssue);
     }
+  }
+
+  void _confirmDelete() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.delete_outline, color: colorScheme.error, size: 28),
+          ),
+          title: Text(
+            'Delete Issue',
+            style: textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this issue? This action cannot be undone.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                'Cancel',
+                style: textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.pop(context, {'action': 'delete'});
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(
-          widget.isViewOnly
-              ? 'Issue Details'
-              : (widget.issue == null ? 'Create Issue' : 'Edit Issue'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
           ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.isViewOnly
+                  ? 'Issue Details'
+                  : (widget.issue == null ? 'Create Issue' : 'Edit Issue'),
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         actions: widget.isViewOnly
             ? [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.black87),
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
+                  ),
                   onPressed: () async {
-                    Navigator.pop(context); // Dismiss current view-only form
+                    Navigator.pop(context);
                     final updatedIssue = await Navigator.push<Map<String, dynamic>>(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => IssueFormPage(issue: widget.issue), // Navigate to edit mode
+                        builder: (context) => IssueFormPage(issue: widget.issue),
                       ),
                     );
                     if (updatedIssue != null) {
-                      Navigator.pop(context, updatedIssue); // Pass updated issue back to previous screen
+                      Navigator.pop(context, updatedIssue);
                     }
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    Navigator.pop(context, {'action': 'delete'}); // Signal to delete
-                  },
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
+                  ),
+                  onPressed: _confirmDelete,
                 ),
+                const SizedBox(width: 8),
               ]
             : null,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _buildTextFormField(
-                controller: _atmIdController,
-                labelText: 'ATM ID',
-                validatorMessage: 'Please enter an ATM ID',
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildTextFormField(
-                controller: _locationController,
-                labelText: 'Location',
-                validatorMessage: 'Please enter a location',
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildTextFormField(
-                controller: _issueController,
-                labelText: 'Issue Description',
-                validatorMessage: 'Please enter an issue description',
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownFormField(
-                value: _selectedPriority,
-                labelText: 'Priority',
-                items: _priorities,
-                onChanged: widget.isViewOnly ? null : (String? newValue) {
-                  setState(() {
-                    _selectedPriority = newValue!;
-                  });
-                },
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildTextFormField(
-                controller: _reportedDateController,
-                labelText: 'Reported Date (YYYY-MM-DD)',
-                validatorMessage: 'Please enter a reported date',
-                onTap: widget.isViewOnly ? null : _selectDate,
-                readOnly: widget.isViewOnly,
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownFormField(
-                value: _selectedStatus,
-                labelText: 'Status',
-                items: _statuses,
-                onChanged: widget.isViewOnly ? null : (String? newValue) {
-                  setState(() {
-                    _selectedStatus = newValue!;
-                  });
-                },
-                readOnly: widget.isViewOnly,
-              ),
-              if (!widget.isViewOnly) ...[
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildTextFormField(
+                      controller: _atmIdController,
+                      labelText: 'ATM ID',
+                      hintText: 'e.g., ATM-001',
+                      icon: Icons.tag,
+                      validatorMessage: 'Please enter an ATM ID',
+                      readOnly: widget.isViewOnly,
                     ),
-                    child: const Text(
-                      'Save Issue',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                    const SizedBox(height: 16),
+                    _buildTextFormField(
+                      controller: _locationController,
+                      labelText: 'Location',
+                      hintText: 'e.g., City Mall, Ground Floor',
+                      icon: Icons.location_on_outlined,
+                      validatorMessage: 'Please enter a location',
+                      readOnly: widget.isViewOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextFormField(
+                      controller: _issueController,
+                      labelText: 'Issue Description',
+                      hintText: 'e.g., Card reader not working',
+                      icon: Icons.bug_report_outlined,
+                      validatorMessage: 'Please enter an issue description',
+                      readOnly: widget.isViewOnly,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    _buildTextFormField(
+                      controller: _reportedDateController,
+                      labelText: 'Reported Date',
+                      hintText: 'YYYY-MM-DD',
+                      icon: Icons.calendar_today_outlined,
+                      validatorMessage: 'Please enter a reported date',
+                      onTap: widget.isViewOnly ? null : _selectDate,
+                      readOnly: true,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    _buildDropdownFormField(
+                      value: _selectedPriority,
+                      labelText: 'Priority',
+                      icon: Icons.priority_high,
+                      items: _priorities,
+                      onChanged: widget.isViewOnly
+                          ? null
+                          : (String? newValue) {
+                              setState(() {
+                                _selectedPriority = newValue!;
+                              });
+                            },
+                      readOnly: widget.isViewOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDropdownFormField(
+                      value: _selectedStatus,
+                      labelText: 'Status',
+                      icon: Icons.flag_outlined,
+                      items: _statuses,
+                      onChanged: widget.isViewOnly
+                          ? null
+                          : (String? newValue) {
+                              setState(() {
+                                _selectedStatus = newValue!;
+                              });
+                            },
+                      readOnly: widget.isViewOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextFormField(
+                      controller: _assignedToController,
+                      labelText: 'Assigned To',
+                      hintText: 'e.g., Jane Doe',
+                      icon: Icons.person_outline,
+                      validatorMessage: 'Please enter who the issue is assigned to',
+                      readOnly: widget.isViewOnly,
+                    ),
+                    
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Save Button (only shown when not view-only)
+            if (!widget.isViewOnly)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withOpacity(0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            widget.issue == null ? Icons.add_circle_outline : Icons.save_outlined,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.issue == null ? 'Create Issue' : 'Save Changes',
+                            style: textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -206,35 +379,82 @@ class _IssueFormPageState extends State<IssueFormPage> {
     required TextEditingController controller,
     required String labelText,
     required String validatorMessage,
+    required IconData icon,
+    String? hintText,
     VoidCallback? onTap,
     bool readOnly = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      readOnly: readOnly,
-      onTap: onTap,
-      decoration: InputDecoration(
-        labelText: labelText,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: readOnly ? colorScheme.surfaceVariant.withOpacity(0.3) : colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.3),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black87, width: 2),
-        ),
+        boxShadow: readOnly
+            ? []
+            : [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return validatorMessage;
-        }
-        return null;
-      },
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
+        style: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          labelText: labelText,
+          hintText: hintText,
+          hintStyle: textTheme.bodyMedium?.copyWith(
+            color: Colors.black,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error, width: 2),
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return validatorMessage;
+          }
+          return null;
+        },
+      ),
     );
   }
 
@@ -242,34 +462,72 @@ class _IssueFormPageState extends State<IssueFormPage> {
     required String value,
     required String labelText,
     required List<String> items,
+    required IconData icon,
     ValueChanged<String?>? onChanged,
     bool readOnly = false,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: labelText,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: readOnly ? colorScheme.surfaceVariant.withOpacity(0.3) : colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.3),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black87, width: 2),
-        ),
+        boxShadow: readOnly
+            ? []
+            : [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
-      items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-      onChanged: readOnly ? null : onChanged,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(
+              item,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: readOnly ? null : onChanged,
+        dropdownColor: colorScheme.surface,
+        icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }

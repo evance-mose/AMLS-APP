@@ -12,16 +12,7 @@ class MaintenanceLogsScreen extends StatefulWidget {
 
 class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
   String selectedFilter = 'All';
-
   final List<String> _filterOptions = ['All', 'Completed', 'In Progress'];
-
-  List<Map<String, dynamic>> get filteredLogs {
-    final currentLogs = (context.read<LogCubit>().state as LogLoaded).logs;
-    if (selectedFilter == 'All') {
-      return currentLogs;
-    }
-    return currentLogs.where((log) => log['status'] == selectedFilter).toList();
-  }
 
   @override
   void initState() {
@@ -31,11 +22,25 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return BlocConsumer<LogCubit, LogState>(
       listener: (context, state) {
         if (state is LogError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(state.message)),
+                ],
+              ),
+              backgroundColor: colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           );
         }
       },
@@ -58,93 +63,212 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         }).toList();
 
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: colorScheme.background,
           appBar: AppBar(
             elevation: 0,
-            backgroundColor: Theme.of(context).colorScheme.background,
+            backgroundColor: Colors.transparent,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Text(
-              'Maintenance Logs',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Maintenance Logs',
+                  style: textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${filteredDisplayLogs.length} ${filteredDisplayLogs.length == 1 ? 'log' : 'logs'}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
             actions: [
               IconButton(
-                icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.search, color: colorScheme.onSurface, size: 20),
+                ),
                 onPressed: () {
                   // Implement search functionality
                 },
               ),
               IconButton(
-                icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
-                onPressed: () {
-                  _showMoreOptions(); // New function for more options
-                },
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
+                ),
+                onPressed: _showMoreOptions,
               ),
+              const SizedBox(width: 8),
             ],
           ),
           body: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              // Filter Section
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    DropdownButton<String>(
-                      value: selectedFilter,
-                      icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface),
-                      underline: Container(), // Remove the underline
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedFilter = newValue!;
-                        });
-                      },
-                      items: _filterOptions.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                        );
-                      }).toList(),
+                    Icon(Icons.filter_list, color: colorScheme.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Filter:',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filterOptions.map((option) {
+                            final isSelected = selectedFilter == option;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(option),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    selectedFilter = option;
+                                  });
+                                },
+                                backgroundColor: colorScheme.surfaceVariant,
+                                selectedColor: colorScheme.primaryContainer,
+                                labelStyle: textTheme.bodySmall?.copyWith(
+                                  color: isSelected 
+                                      ? colorScheme.onPrimaryContainer 
+                                      : colorScheme.onSurfaceVariant,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: isSelected 
+                                        ? colorScheme.primary 
+                                        : Colors.transparent,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+              
               // Logs List
               Expanded(
                 child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Loading logs...',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     : filteredDisplayLogs.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.assignment_outlined, size: 64, color: Theme.of(context).colorScheme.outline),
-                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceVariant.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.assignment_outlined,
+                                    size: 64,
+                                    color: colorScheme.outline,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
                                 Text(
                                   'No logs found',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  style: textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Start by creating a new maintenance log',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: filteredDisplayLogs.length,
-                            itemBuilder: (context, index) {
-                              final log = filteredDisplayLogs[index];
-                              return _buildMaintenanceLogCard(log);
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              context.read<LogCubit>().fetchLogs();
                             },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                              itemCount: filteredDisplayLogs.length,
+                              itemBuilder: (context, index) {
+                                final log = filteredDisplayLogs[index];
+                                return _buildMaintenanceLogCard(log);
+                              },
+                            ),
                           ),
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
               final newLog = await Navigator.push<Map<String, dynamic>>(
                 context,
@@ -155,8 +279,11 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                 context.read<LogCubit>().addLog(newLog);
               }
             },
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            icon: const Icon(Icons.add),
+            label: const Text('Create Log'),
+            elevation: 4,
           ),
         );
       },
@@ -164,107 +291,192 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
   }
 
   Widget _buildMaintenanceLogCard(Map<String, dynamic> log) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final isCompleted = log['status'] == 'Completed';
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.transparent,
         child: InkWell(
           onTap: () async {
             final result = await Navigator.push<Map<String, dynamic>>(
               context,
               MaterialPageRoute(
-                builder: (context) => LogFormPage(log: log, isViewOnly: true), // View-only mode
+                builder: (context) => LogFormPage(log: log, isViewOnly: true),
               ),
             );
 
             if (result != null) {
               if (result.containsKey('action') && result['action'] == 'delete') {
-                // Handle delete action from the view-only form
                 _confirmDeleteLog(log);
               } else {
-                // Handle update from the edit mode initiated from view-only form
                 context.read<LogCubit>().updateLog(log, result);
               }
             }
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      log['atmId'],
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  log['atmId'],
+                                  style: textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  log['location'],
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isCompleted ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isCompleted ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.tertiary,
-                          width: 1,
+                        gradient: LinearGradient(
+                          colors: isCompleted
+                              ? [Colors.green.shade400, Colors.green.shade600]
+                              : [Colors.orange.shade400, Colors.orange.shade600],
                         ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isCompleted ? Colors.green : Colors.orange)
+                                .withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        log['status'],
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onTertiaryContainer,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isCompleted ? Icons.check_circle : Icons.schedule,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            log['status'],
+                            style: textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  log['location'],
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                
+                const SizedBox(height: 16),
+                
+                // Divider
+                Container(
+                  height: 1,
+                  color: colorScheme.outline.withOpacity(0.2),
                 ),
+                
+                const SizedBox(height: 16),
+                
+                // Info Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.calendar_today_outlined,
+                        'Date',
+                        log['date'],
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: colorScheme.outline.withOpacity(0.2),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.access_time_outlined,
+                        'Time',
+                        log['time'],
+                        colorScheme,
+                        textTheme,
+                      ),
+                    ),
+                  ],
+                ),
+                
                 const SizedBox(height: 12),
+                
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${log['date']} at ${log['time']}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.person_outline,
+                        'Technician',
+                        log['technician'],
+                        colorScheme,
+                        textTheme,
+                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      log['technician'],
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: colorScheme.outline.withOpacity(0.2),
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.build, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      log['type'],
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Expanded(
+                      child: _buildInfoItem(
+                        Icons.build_outlined,
+                        'Type',
+                        log['type'],
+                        colorScheme,
+                        textTheme,
+                      ),
                     ),
                   ],
                 ),
@@ -276,26 +488,109 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     );
   }
 
+  Widget _buildInfoItem(
+    IconData icon,
+    String label,
+    String value,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16, color: colorScheme.primary),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                value,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _confirmDeleteLog(Map<String, dynamic> log) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Log', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-          content: Text('Are you sure you want to delete this log?', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          icon: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.delete_outline, color: colorScheme.error, size: 28),
+          ),
+          title: Text(
+            'Delete Log',
+            style: textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this maintenance log? This action cannot be undone.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
-              },
-              child: Text('Cancel', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                'Cancel',
+                style: textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 context.read<LogCubit>().deleteLog(log);
-                Navigator.of(context).pop(); // Dismiss dialog
+                Navigator.of(context).pop();
               },
-              child: Text('Delete', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -303,76 +598,58 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     );
   }
 
-  PopupMenuEntry<String> _buildPopupMenuItem(String value, String text) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Text(text, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-    );
-  }
-
   void _showMoreOptions() {
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width - 60, // X position (right corner)
-        AppBar().preferredSize.height + MediaQuery.of(context).padding.top, // Y position (below AppBar)
+        MediaQuery.of(context).size.width - 60,
+        AppBar().preferredSize.height + MediaQuery.of(context).padding.top,
         0,
         0,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: <PopupMenuEntry<String>>[
-        _buildPopupMenuItem('settings', 'Settings'),
-        _buildPopupMenuItem('help', 'Help'),
-        _buildPopupMenuItem('about', 'About'),
+        _buildPopupMenuItem('settings', 'Settings', Icons.settings_outlined),
+        _buildPopupMenuItem('help', 'Help', Icons.help_outline),
+        _buildPopupMenuItem('about', 'About', Icons.info_outline),
       ],
     ).then((value) {
       if (value != null) {
-        // Handle selected option
         _handleMoreOptionSelected(value);
       }
     });
   }
 
-  void _handleMoreOptionSelected(String value) {
-    switch (value) {
-      case 'settings':
-        // Navigate to settings or perform action
-        debugPrint('Settings selected');
-        break;
-      case 'help':
-        // Navigate to help or perform action
-        debugPrint('Help selected');
-        break;
-      case 'about':
-        // Navigate to about or perform action
-        debugPrint('About selected');
-        break;
-    }
-  }
+  PopupMenuEntry<String> _buildPopupMenuItem(String value, String text, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
         children: [
+          Icon(icon, size: 20, color: colorScheme.onSurface),
+          const SizedBox(width: 12),
           Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
+            text,
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
           ),
         ],
       ),
     );
+  }
+
+  void _handleMoreOptionSelected(String value) {
+    switch (value) {
+      case 'settings':
+        debugPrint('Settings selected');
+        break;
+      case 'help':
+        debugPrint('Help selected');
+        break;
+      case 'about':
+        debugPrint('About selected');
+        break;
+    }
   }
 }
