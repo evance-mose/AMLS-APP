@@ -57,6 +57,8 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         } else if (state is LogInitial) {
           isLoading = true;
           displayLogs = [];
+        } else if (state is LogError) {
+          displayLogs = [];
         }
 
         final filteredDisplayLogs = displayLogs.where((log) {
@@ -231,14 +233,14 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    Icons.assignment_outlined,
+                                    state is LogError ? Icons.error_outline : Icons.assignment_outlined,
                                     size: 64,
-                                    color: colorScheme.outline,
+                                    color: state is LogError ? colorScheme.error : colorScheme.outline,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
-                                  'No logs found',
+                                  state is LogError ? 'Failed to load logs' : 'No logs found',
                                   style: textTheme.titleMedium?.copyWith(
                                     color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
@@ -246,11 +248,30 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Start by creating a new maintenance log',
+                                  state is LogError 
+                                    ? 'Check your connection and try again'
+                                    : 'Start by creating a new maintenance log',
                                   style: textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
+                                if (state is LogError) ...[
+                                  const SizedBox(height: 24),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      context.read<LogCubit>().fetchLogs();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Retry'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           )

@@ -83,7 +83,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Issues & Reports',
+              'Issues & Reports',
                   style: textTheme.titleLarge?.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
@@ -167,10 +167,10 @@ class _IssuesScreenState extends State<IssuesScreen> {
                                 label: Text(option),
                                 selected: isSelected,
                                 onSelected: (selected) {
-                                  setState(() {
+                        setState(() {
                                     selectedFilter = option;
-                                  });
-                                },
+                        });
+                      },
                                 backgroundColor: colorScheme.surfaceVariant,
                                 selectedColor: colorScheme.primaryContainer,
                                 labelStyle: textTheme.bodySmall?.copyWith(
@@ -189,8 +189,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               ),
-                            );
-                          }).toList(),
+                        );
+                      }).toList(),
                         ),
                       ),
                     ),
@@ -259,11 +259,11 @@ class _IssuesScreenState extends State<IssuesScreen> {
                             },
                             child: ListView.builder(
                               padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                              itemCount: filteredDisplayIssues.length,
-                              itemBuilder: (context, index) {
-                                final issue = filteredDisplayIssues[index];
-                                return _buildIssueCard(issue);
-                              },
+                            itemCount: filteredDisplayIssues.length,
+                            itemBuilder: (context, index) {
+                              final issue = filteredDisplayIssues[index];
+                              return _buildIssueCard(issue);
+                            },
                             ),
                           ),
               ),
@@ -383,7 +383,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Text(
+                    Text(
                                   issue.location,
                                   style: textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -491,7 +491,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       ),
                     ),
                     Container(
-                      width: 1,
+                          width: 1,
                       height: 40,
                       color: colorScheme.outline.withOpacity(0.2),
                       margin: const EdgeInsets.symmetric(horizontal: 12),

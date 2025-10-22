@@ -30,22 +30,26 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? 'Unknown',
+      email: json['email'] as String? ?? '',
       emailVerifiedAt: json['email_verified_at'] != null
           ? DateTime.parse(json['email_verified_at'] as String)
           : null,
-      password: json['password'] as String,
+      password: json['password'] as String? ?? '',
       rememberToken: json['remember_token'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
       role: UserRole.values.firstWhere(
-        (e) => e.toString().split('.').last == json['role'],
+        (e) => e.toString().split('.').last == (json['role'] as String? ?? 'admin'),
         orElse: () => UserRole.admin,
       ),
       status: UserStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
+        (e) => e.toString().split('.').last == (json['status'] as String? ?? 'active'),
         orElse: () => UserStatus.active,
       ),
     );

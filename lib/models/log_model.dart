@@ -32,20 +32,24 @@ class Log {
 
   factory Log.fromJson(Map<String, dynamic> json) {
     return Log(
-      id: json['id'] as int,
-      userId: json['user_id'] as int,
+      id: json['id'] as int? ?? 0,
+      userId: json['user_id'] as int? ?? 0,
       issueId: json['issue_id'] as int?,
       actionTaken: json['action_taken'] as String?,
       status: LogStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
+        (e) => e.toString().split('.').last == (json['status'] as String? ?? 'pending'),
         orElse: () => LogStatus.pending,
       ),
       priority: LogPriority.values.firstWhere(
-        (e) => e.toString().split('.').last == json['priority'],
+        (e) => e.toString().split('.').last == (json['priority'] as String? ?? 'low'),
         orElse: () => LogPriority.low,
       ),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
       user: json['user'] != null ? User.fromJson(json['user']) : null,
       issue: json['issue'] != null ? Issue.fromJson(json['issue']) : null,
     );

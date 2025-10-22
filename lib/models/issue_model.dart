@@ -44,27 +44,33 @@ class Issue {
 
   factory Issue.fromJson(Map<String, dynamic> json) {
     return Issue(
-      id: json['id'] as int,
+      id: json['id'] as int? ?? 0,
       userId: json['user_id'] as int?,
       assignedTo: json['assigned_to'] as int?,
-      location: json['location'] as String,
-      atmId: json['atm_id'] as String,
+      location: json['location'] as String? ?? 'Unknown Location',
+      atmId: json['atm_id'] as String? ?? 'Unknown ATM',
       category: IssueCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == json['category'],
+        (e) => e.toString().split('.').last == (json['category'] as String? ?? 'other'),
         orElse: () => IssueCategory.other,
       ),
       description: json['description'] as String?,
       status: IssueStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
+        (e) => e.toString().split('.').last == (json['status'] as String? ?? 'pending'),
         orElse: () => IssueStatus.pending,
       ),
       priority: IssuePriority.values.firstWhere(
-        (e) => e.toString().split('.').last == json['priority'],
+        (e) => e.toString().split('.').last == (json['priority'] as String? ?? 'low'),
         orElse: () => IssuePriority.low,
       ),
-      reportedDate: DateTime.parse(json['created_at'] as String), // Use created_at as reported date
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      reportedDate: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 
