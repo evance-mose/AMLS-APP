@@ -598,16 +598,16 @@ class _HomePageState extends State<HomePage> {
           'Issues & Reports',
           'Track and resolve reported issues',
           Icons.warning_amber_outlined,
-          [Colors.red, Colors.red.withOpacity(0.7)],
+          [Colors.red.shade600, Colors.red.shade400],
           () => Navigator.pushNamed(context, '/issues'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         _buildModernActionCard(
           context,
           'Maintenance Logs',
           'View and manage all maintenance activities',
           Icons.build_circle_outlined,
-          [colorScheme.primary, colorScheme.primary.withOpacity(0.7)],
+          [Colors.blue.shade600, Colors.blue.shade400],
           () => Navigator.pushNamed(context, '/logs'),
         ),
       ],
@@ -629,35 +629,51 @@ class _HomePageState extends State<HomePage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.2),
+              width: 1,
             ),
-            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: gradientColors[0].withOpacity(0.3),
-                blurRadius: 12,
+                color: colorScheme.shadow.withOpacity(0.08),
+                blurRadius: 16,
                 offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: colorScheme.shadow.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradientColors[0].withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: Colors.white, size: 28),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,30 +681,32 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       title,
                       style: textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       subtitle,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                  size: 16,
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 18,
                 ),
               ),
             ],
