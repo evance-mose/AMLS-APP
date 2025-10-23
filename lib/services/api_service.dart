@@ -3,19 +3,27 @@ import 'dart:convert';
 import 'package:amls/models/log_model.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
+import 'package:amls/services/auth_service.dart';
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
   
-  static const Map<String, String> headers = {
+  static const Map<String, String> baseHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  // Get headers with authentication token
+  static Future<Map<String, String>> _getHeaders() async {
+    final authHeaders = await AuthService.getAuthHeaders();
+    return authHeaders;
+  }
 
   // Fetch all logs
   static Future<List<Log>> fetchLogs() async {
     try {
       print('Fetching logs from: $baseUrl/logs');
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/logs'),
         headers: headers,
@@ -48,6 +56,7 @@ class ApiService {
   // Create a new log
   static Future<Log> createLog(Log log) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/logs'),
         headers: headers,
@@ -67,6 +76,7 @@ class ApiService {
   // Update an existing log
   static Future<Log> updateLog(int id, Log log) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('$baseUrl/logs/$id'),
         headers: headers,
@@ -86,6 +96,7 @@ class ApiService {
   // Delete a log
   static Future<void> deleteLog(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('$baseUrl/logs/$id'),
         headers: headers,
@@ -103,6 +114,7 @@ class ApiService {
   static Future<List<Issue>> fetchIssues() async {
     try {
       print('Fetching issues from: $baseUrl/issues');
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/issues'),
         headers: headers,
@@ -135,6 +147,7 @@ class ApiService {
   // Create a new issue
   static Future<Issue> createIssue(Issue issue) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/issues'),
         headers: headers,
@@ -154,6 +167,7 @@ class ApiService {
   // Update an existing issue
   static Future<Issue> updateIssue(int id, Issue issue) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('$baseUrl/issues/$id'),
         headers: headers,
@@ -173,6 +187,7 @@ class ApiService {
   // Delete an issue
   static Future<void> deleteIssue(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('$baseUrl/issues/$id'),
         headers: headers,
@@ -190,6 +205,7 @@ class ApiService {
   static Future<MonthlyReport> fetchMonthlyReport() async {
     try {
       print('Fetching monthly report from: $baseUrl/reports/monthly');
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/analytics/monthly'),
         headers: headers,

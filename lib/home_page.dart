@@ -69,6 +69,7 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () {
                           Navigator.pop(context);
                           context.read<AuthCubit>().logout();
+                          // Navigation back to login is handled by main.dart BlocBuilder
                         },
                         child: Text('Logout', style: TextStyle(color: colorScheme.error)),
                       ),

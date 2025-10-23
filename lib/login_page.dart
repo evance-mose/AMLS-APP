@@ -10,7 +10,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
@@ -31,9 +31,9 @@ class _LoginPageState extends State<LoginPage> {
         });
         if (state is AuthAuthenticated) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome, ${state.username}!')),
+            SnackBar(content: Text('Welcome, ${state.user?.name ?? 'User'}!')),
           );
-          Navigator.pushReplacementNamed(context, '/home');
+          // Navigation is now handled by main.dart BlocBuilder
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
@@ -107,14 +107,14 @@ class _LoginPageState extends State<LoginPage> {
                               const SizedBox(height: 16.0),
                             ],
 
-                            // Username Field
+                            // Email Field
                             TextFormField(
-                              controller: _usernameController,
+                              controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                labelText: 'Username',
-                                hintText: 'Enter your username',
+                                labelText: 'Email',
+                                hintText: 'Enter your email',
                                 prefixIcon: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.primary),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -141,7 +141,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter your username';
+                                  return 'Please enter your email';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return 'Please enter a valid email';
                                 }
                                 return null;
                               },
@@ -293,7 +296,7 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().login(
-            _usernameController.text,
+            _emailController.text,
             _passwordController.text,
           );
     }
@@ -301,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:amls/services/auth_service.dart';
 
 abstract class ApiModel {
   int get id;
@@ -9,10 +10,16 @@ abstract class ApiModel {
 class GenericApiService<T extends ApiModel> {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
   
-  static const Map<String, String> headers = {
+  static const Map<String, String> baseHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  // Get headers with authentication token
+  static Future<Map<String, String>> _getHeaders() async {
+    final authHeaders = await AuthService.getAuthHeaders();
+    return authHeaders;
+  }
 
   final String endpoint;
   final T Function(Map<String, dynamic>) fromJson;
@@ -26,6 +33,7 @@ class GenericApiService<T extends ApiModel> {
   Future<List<T>> fetchAll() async {
     try {
       print('Fetching $endpoint from: $baseUrl/$endpoint');
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/$endpoint'),
         headers: headers,
@@ -58,6 +66,7 @@ class GenericApiService<T extends ApiModel> {
   // Create a new item
   Future<T> create(T item) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/$endpoint'),
         headers: headers,
@@ -77,6 +86,7 @@ class GenericApiService<T extends ApiModel> {
   // Update an existing item
   Future<T> update(int id, T item) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.put(
         Uri.parse('$baseUrl/$endpoint/$id'),
         headers: headers,
@@ -96,6 +106,7 @@ class GenericApiService<T extends ApiModel> {
   // Delete an item
   Future<void> delete(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.delete(
         Uri.parse('$baseUrl/$endpoint/$id'),
         headers: headers,
@@ -112,6 +123,7 @@ class GenericApiService<T extends ApiModel> {
   // Get a single item by ID
   Future<T> getById(int id) async {
     try {
+      final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/$endpoint/$id'),
         headers: headers,

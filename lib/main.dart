@@ -79,12 +79,24 @@ class MyApp extends StatelessWidget {
             labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
           ),
         ),
-        initialRoute: '/login', // or '/login' if you want to start at login
+        home: BlocBuilder<AuthCubit, AuthState>(
+          builder: (context, state) {
+            if (state is AuthLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            } else if (state is AuthAuthenticated) {
+              return const HomePage();
+            } else {
+              return const LoginPage();
+            }
+          },
+        ),
         routes: {
-          '/home': (context) => const HomePage(),
           '/logs': (context) => const MaintenanceLogsScreen(),
           '/issues': (context) => const IssuesScreen(),
-          '/login': (context) => const LoginPage(),
         },
       ),
     );
