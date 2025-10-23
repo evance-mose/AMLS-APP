@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:amls/models/user_model.dart';
+import 'package:amls/services/generic_api_service.dart';
 
 enum IssueCategory {
   dispenser_errors,
@@ -13,7 +15,7 @@ enum IssueCategory {
 enum IssueStatus { pending, open, in_progress, assigned, acknowledged, resolved, closed }
 enum IssuePriority { low, medium, high, critical }
 
-class Issue {
+class Issue implements ApiModel {
   final int id;
   final int? userId;
   final int? assignedTo;
@@ -26,6 +28,8 @@ class Issue {
   final DateTime reportedDate;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final User? user;
+  final User? assignedUser;
 
   Issue({
     required this.id,
@@ -40,6 +44,8 @@ class Issue {
     required this.reportedDate,
     required this.createdAt,
     required this.updatedAt,
+    this.user,
+    this.assignedUser,
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
@@ -71,6 +77,8 @@ class Issue {
       updatedAt: json['updated_at'] != null 
           ? DateTime.parse(json['updated_at'] as String)
           : DateTime.now(),
+      user: json['user'] != null ? User.fromJson(json['user']) : null,
+      assignedUser: json['assigned_user'] != null ? User.fromJson(json['assigned_user']) : null,
     );
   }
 
@@ -88,6 +96,8 @@ class Issue {
       'reported_date': reportedDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'user': user?.toJson(),
+      'assigned_user': assignedUser?.toJson(),
     };
   }
 

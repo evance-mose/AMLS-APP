@@ -56,6 +56,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
         } else if (state is IssueInitial) {
           isLoading = true;
           displayIssues = [];
+        } else if (state is IssueError) {
+          displayIssues = [];
         }
 
         final filteredDisplayIssues = displayIssues.where((issue) {
@@ -230,14 +232,14 @@ class _IssuesScreenState extends State<IssuesScreen> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    Icons.warning_amber_outlined,
+                                    state is IssueError ? Icons.error_outline : Icons.warning_amber_outlined,
                                     size: 64,
-                                    color: colorScheme.outline,
+                                    color: state is IssueError ? colorScheme.error : colorScheme.outline,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
-                                  'No issues found',
+                                  state is IssueError ? 'Failed to load issues' : 'No issues found',
                                   style: textTheme.titleMedium?.copyWith(
                                     color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
@@ -245,11 +247,30 @@ class _IssuesScreenState extends State<IssuesScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Start by creating a new issue',
+                                  state is IssueError 
+                                    ? 'Check your connection and try again'
+                                    : 'Start by creating a new issue',
                                   style: textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
                                 ),
+                                if (state is IssueError) ...[
+                                  const SizedBox(height: 24),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      context.read<IssueCubit>().fetchIssues();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Retry'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           )
@@ -500,7 +521,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       child: _buildInfoItem(
                         Icons.person_outline,
                         'Assigned To',
-                        issue.assignedTo != null ? 'Technician ${issue.assignedTo}' : 'N/A',
+                        issue.assignedUser?.name ?? 'N/A',
                         colorScheme,
                         textTheme,
                       ),

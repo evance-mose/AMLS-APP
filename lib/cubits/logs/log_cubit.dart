@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:amls/models/log_model.dart';
-import 'package:amls/services/api_service.dart';
+import 'package:amls/services/api_instances.dart';
 
 part 'log_state.dart';
 
@@ -13,7 +13,7 @@ class LogCubit extends Cubit<LogState> {
     emit(LogLoading());
     
     try {
-      final logs = await ApiService.fetchLogs();
+      final logs = await ApiInstances.logApi.fetchAll();
       emit(LogLoaded(logs));
     } catch (e) {
       emit(LogError('Error fetching logs: $e'));
@@ -24,7 +24,7 @@ class LogCubit extends Cubit<LogState> {
     emit(LogLoading());
     
     try {
-      await ApiService.createLog(log);
+      await ApiInstances.logApi.create(log);
       // Refresh the logs list after successful creation
       fetchLogs();
     } catch (e) {
@@ -36,7 +36,7 @@ class LogCubit extends Cubit<LogState> {
     emit(LogLoading());
     
     try {
-      await ApiService.updateLog(oldLog.id, newLog);
+      await ApiInstances.logApi.update(oldLog.id, newLog);
       // Refresh the logs list after successful update
       fetchLogs();
     } catch (e) {
@@ -48,7 +48,7 @@ class LogCubit extends Cubit<LogState> {
     emit(LogLoading());
     
     try {
-      await ApiService.deleteLog(log.id);
+      await ApiInstances.logApi.delete(log.id);
       // Refresh the logs list after successful deletion
       fetchLogs();
     } catch (e) {

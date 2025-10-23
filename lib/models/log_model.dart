@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/models/issue_model.dart';
+import 'package:amls/services/generic_api_service.dart';
 
 enum LogStatus { pending, in_progress, completed, resolved, closed }
 enum LogPriority { low, medium, high }
 
-class Log {
+class Log implements ApiModel {
   final int id;
   final int userId;
   final int? issueId;

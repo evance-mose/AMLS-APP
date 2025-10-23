@@ -73,7 +73,7 @@ class _LogFormPageState extends State<LogFormPage> {
         user: widget.log?.user,
         issue: widget.log?.issue,
       );
-      Navigator.pop(context, newLog);
+      if (mounted) Navigator.pop(context, newLog);
     }
   }
 
@@ -185,7 +185,7 @@ class _LogFormPageState extends State<LogFormPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                Navigator.pop(context, {'action': 'delete'});
+                if (mounted) Navigator.pop(context, {'action': 'delete'});
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.error,
@@ -222,7 +222,9 @@ class _LogFormPageState extends State<LogFormPage> {
             ),
             child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (mounted) Navigator.pop(context);
+          },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,14 +252,14 @@ class _LogFormPageState extends State<LogFormPage> {
                     child: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
                   ),
                   onPressed: () async {
-                    Navigator.pop(context);
+                    if (mounted) Navigator.pop(context);
                     final updatedLog = await Navigator.push<Log?>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => LogFormPage(log: widget.log),
                       ),
                     );
-                    if (updatedLog != null) {
+                    if (updatedLog != null && mounted) {
                       Navigator.pop(context, updatedLog);
                     }
                   },

@@ -38,7 +38,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _selectedPriority = widget.issue?.priority.toString().split('.').last.toCapitalized() ?? _priorities.first;
     _reportedDateController = TextEditingController(text: widget.issue?.reportedDate.toIso8601String().split('T').first ?? '');
     _selectedStatus = widget.issue?.status.toString().split('.').last.toCapitalized() ?? _statuses.first;
-    _assignedToController = TextEditingController(text: widget.issue?.assignedTo != null ? 'Technician ${widget.issue?.assignedTo}' : ''); // Initialize new controller
+    _assignedToController = TextEditingController(text: widget.issue?.assignedUser?.name ?? ''); // Initialize new controller
   }
 
   @override
@@ -86,10 +86,12 @@ class _IssueFormPageState extends State<IssueFormPage> {
         priority: IssuePriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
         reportedDate: DateTime.tryParse(_reportedDateController.text) ?? DateTime.now(),
         status: IssueStatus.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedStatus),
-        assignedTo: 1, // Dummy assignedTo ID
+        assignedTo: widget.issue?.assignedTo,
         createdAt: widget.issue?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
-        userId: 1, // Dummy user ID
+        userId: widget.issue?.userId,
+        user: widget.issue?.user,
+        assignedUser: widget.issue?.assignedUser,
       );
       Navigator.pop(context, newIssue);
     }
