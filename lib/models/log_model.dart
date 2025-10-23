@@ -5,12 +5,14 @@ import 'package:amls/services/generic_api_service.dart';
 
 enum LogStatus { pending, in_progress, completed, resolved, closed }
 enum LogPriority { low, medium, high }
+enum LogCategory { dispenser_errors, card_reader_errors, receipt_printer_errors, epp_errors, pc_core_errors, journal_printer_errors, recycling_module_errors, other }
 
 class Log implements ApiModel {
   final int id;
   final int userId;
   final int? issueId;
   final String? actionTaken;
+  final LogCategory category;
   final LogStatus status;
   final LogPriority priority;
   final DateTime createdAt;
@@ -23,6 +25,7 @@ class Log implements ApiModel {
     required this.userId,
     this.issueId,
     this.actionTaken,
+    required this.category,
     required this.status,
     required this.priority,
     required this.createdAt,
@@ -37,6 +40,10 @@ class Log implements ApiModel {
       userId: json['user_id'] as int? ?? 0,
       issueId: json['issue_id'] as int?,
       actionTaken: json['action_taken'] as String?,
+      category: LogCategory.values.firstWhere(
+        (e) => e.toString().split('.').last == (json['category'] as String? ?? 'other'),
+        orElse: () => LogCategory.other,
+      ),
       status: LogStatus.values.firstWhere(
         (e) => e.toString().split('.').last == (json['status'] as String? ?? 'pending'),
         orElse: () => LogStatus.pending,
@@ -62,6 +69,7 @@ class Log implements ApiModel {
       'user_id': userId,
       'issue_id': issueId,
       'action_taken': actionTaken,
+      'category': category.toString().split('.').last,
       'status': status.toString().split('.').last,
       'priority': priority.toString().split('.').last,
       'created_at': createdAt.toIso8601String(),

@@ -22,19 +22,14 @@ class _LogFormPageState extends State<LogFormPage> {
   late TextEditingController _dateController;
   late TextEditingController _timeController;
   late TextEditingController _technicianController;
+  late TextEditingController _actionTakenController;
   late String _selectedStatus;
-  late String _selectedType;
-  late String _actionTakenController;
+  late String _selectedCategory;
   late String _selectedPriority; // New field for priority
 
   final List<String> _statuses = LogStatus.values.map((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized()).toList();
-  final List<String> _types = [
-    'Routine Check',
-    'Cash Replenishment',
-    'Hardware Repair',
-    'Software Update'
-  ];
   final List<String> _priorities = LogPriority.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
+  final List<String> _categories = LogCategory.values.map((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized()).toList();
 
   @override
   void initState() {
@@ -44,8 +39,9 @@ class _LogFormPageState extends State<LogFormPage> {
     _dateController = TextEditingController(text: widget.log?.createdAt.toIso8601String().split('T').first ?? '');
     _timeController = TextEditingController(text: '${widget.log?.createdAt.hour.toString().padLeft(2, '0')}:${widget.log?.createdAt.minute.toString().padLeft(2, '0')}' ?? '');
     _technicianController = TextEditingController(text: widget.log?.user?.name ?? ''); // Use user name
+    _actionTakenController = TextEditingController(text: widget.log?.actionTaken ?? ''); // Use text controller for actionTaken
     _selectedStatus = widget.log?.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _statuses.first;
-    _selectedType = widget.log?.actionTaken ?? _types.first; // Use actionTaken as type
+    _selectedCategory = widget.log?.category.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _categories.first;
     _selectedPriority = widget.log?.priority.toString().split('.').last.toCapitalized() ?? _priorities.first;
   }
 
@@ -56,6 +52,7 @@ class _LogFormPageState extends State<LogFormPage> {
     _dateController.dispose();
     _timeController.dispose();
     _technicianController.dispose();
+    _actionTakenController.dispose();
     super.dispose();
   }
 
@@ -65,7 +62,8 @@ class _LogFormPageState extends State<LogFormPage> {
         id: widget.log?.id ?? 0, // ID generation is handled by Cubit
         userId: widget.log?.userId ?? 1, // Use existing userId or default
         issueId: widget.log?.issueId,
-        actionTaken: _selectedType, // Use selectedType for actionTaken
+        actionTaken: _actionTakenController.text.isEmpty ? null : _actionTakenController.text, // Use text controller
+        category: LogCategory.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedCategory),
         status: LogStatus.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedStatus),
         priority: LogPriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
         createdAt: widget.log?.createdAt ?? DateTime.now(),
@@ -341,16 +339,25 @@ class _LogFormPageState extends State<LogFormPage> {
                       readOnly: widget.isViewOnly,
                     ),
                     const SizedBox(height: 16),
-                    _buildDropdownFormField(
-                      value: _selectedType,
-                      labelText: 'Maintenance Type',
+                    _buildTextFormField(
+                      controller: _actionTakenController,
+                      labelText: 'Action Taken',
+                      hintText: 'e.g., Replaced card reader, Updated software',
                       icon: Icons.construction_outlined,
-                      items: _types,
+                      validatorMessage: 'Please enter the action taken',
+                      readOnly: widget.isViewOnly,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDropdownFormField(
+                      value: _selectedCategory,
+                      labelText: 'Category',
+                      icon: Icons.category_outlined,
+                      items: _categories,
                       onChanged: widget.isViewOnly
                           ? null
                           : (String? newValue) {
                               setState(() {
-                                _selectedType = newValue!;
+                                _selectedCategory = newValue!;
                               });
                             },
                       readOnly: widget.isViewOnly,
@@ -531,7 +538,7 @@ class _LogFormPageState extends State<LogFormPage> {
   }
 
   Widget _buildDropdownFormField({
-    required String value,
+    required String? value,
     required String labelText,
     required List<String> items,
     required IconData icon,
@@ -585,17 +592,31 @@ class _LogFormPageState extends State<LogFormPage> {
             borderSide: BorderSide(color: colorScheme.primary, width: 2),
           ),
         ),
-        items: items.map((String item) {
-          return DropdownMenuItem<String>(
-            value: item,
-            child: Text(
-              item,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
+        items: [
+          // Add placeholder item for null values
+          if (value == null)
+            DropdownMenuItem<String>(
+              value: null,
+              child: Text(
+                'Select ${labelText.toLowerCase()}',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
-          );
-        }).toList(),
+          ...items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            );
+          }),
+        ],
         onChanged: readOnly ? null : onChanged,
         dropdownColor: colorScheme.surface,
         icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
