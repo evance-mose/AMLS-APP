@@ -102,52 +102,49 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFF6C63FF),
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.psychology_outlined,
-                color: Colors.white,
-                size: 24,
+            Text(
+              'AI Assistant',
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'AI Assistant',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Online',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
+            Text(
+              'Online',
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
+            ),
             onPressed: () {
               _showOptionsMenu(context);
             },
@@ -176,25 +173,25 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   _buildQuickActionChip(
                     'Cash Jam',
                     Icons.attach_money,
-                    const Color(0xFF4CAF50),
+                    Colors.red,
                   ),
                   const SizedBox(width: 8),
                   _buildQuickActionChip(
                     'Card Reader',
                     Icons.credit_card,
-                    const Color(0xFF2196F3),
+                    Colors.blue,
                   ),
                   const SizedBox(width: 8),
                   _buildQuickActionChip(
                     'Screen Issue',
                     Icons.monitor,
-                    const Color(0xFFFF9800),
+                    Colors.orange,
                   ),
                   const SizedBox(width: 8),
                   _buildQuickActionChip(
                     'Maintenance',
                     Icons.build,
-                    const Color(0xFF9C27B0),
+                    colorScheme.primary,
                   ),
                 ],
               ),
@@ -209,9 +206,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index == _messages.length && _isTyping) {
-                  return _buildTypingIndicator();
+                  return _buildTypingIndicator(colorScheme);
                 }
-                return _buildMessageBubble(_messages[index]);
+                return _buildMessageBubble(_messages[index], colorScheme);
               },
             ),
           ),
@@ -236,15 +233,15 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FA),
+                        color: colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: TextField(
                         controller: _messageController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Ask me anything...',
                           border: InputBorder.none,
-                          hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
+                          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                         maxLines: null,
                         textCapitalization: TextCapitalization.sentences,
@@ -255,22 +252,18 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   const SizedBox(width: 12),
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6C63FF).withOpacity(0.3),
+                          color: colorScheme.shadow.withOpacity(0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white),
+                      icon: Icon(Icons.send_rounded, color: colorScheme.onPrimary),
                       onPressed: _sendMessage,
                     ),
                   ),
@@ -284,39 +277,40 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   }
 
   Widget _buildQuickActionChip(String label, IconData icon, Color color) {
-    return InkWell(
-      onTap: () {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
+      selected: false,
+      onSelected: (selected) {
         _messageController.text = 'Help with $label';
         _sendMessage();
       },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ],
+      backgroundColor: colorScheme.surfaceVariant,
+      selectedColor: colorScheme.primaryContainer,
+      labelStyle: textTheme.bodySmall?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Colors.transparent,
         ),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
+  Widget _buildMessageBubble(ChatMessage message, ColorScheme colorScheme) {
     final isUser = message.isUser;
     
     return Padding(
@@ -329,23 +323,19 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C63FF).withOpacity(0.3),
+                    color: colorScheme.shadow.withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.psychology_outlined,
-                color: Colors.white,
+                color: colorScheme.onPrimary,
                 size: 24,
               ),
             ),
@@ -358,14 +348,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: isUser
-                        ? const LinearGradient(
-                            colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: isUser ? null : Colors.white,
+                    color: isUser ? colorScheme.primary : colorScheme.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
@@ -374,7 +357,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: colorScheme.shadow.withOpacity(0.08),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -383,7 +366,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   child: Text(
                     message.text,
                     style: TextStyle(
-                      color: isUser ? Colors.white : const Color(0xFF2D3748),
+                      color: isUser ? colorScheme.onPrimary : colorScheme.onSurface,
                       fontSize: 15,
                       height: 1.5,
                     ),
@@ -394,8 +377,8 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     _formatTime(message.timestamp),
-                    style: const TextStyle(
-                      color: Color(0xFF9E9E9E),
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),
@@ -408,11 +391,11 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: Colors.green,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4CAF50).withOpacity(0.3),
+                    color: colorScheme.shadow.withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -430,7 +413,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     );
   }
 
-  Widget _buildTypingIndicator() {
+  Widget _buildTypingIndicator(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -439,16 +422,12 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6C63FF), Color(0xFF5A52D5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: colorScheme.primary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.psychology_outlined,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
               size: 24,
             ),
           ),
@@ -456,7 +435,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -465,7 +444,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: colorScheme.shadow.withOpacity(0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -474,11 +453,11 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildDot(0),
+                _buildDot(0, colorScheme),
                 const SizedBox(width: 4),
-                _buildDot(1),
+                _buildDot(1, colorScheme),
                 const SizedBox(width: 4),
-                _buildDot(2),
+                _buildDot(2, colorScheme),
               ],
             ),
           ),
@@ -487,7 +466,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     );
   }
 
-  Widget _buildDot(int index) {
+  Widget _buildDot(int index, ColorScheme colorScheme) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 600),
@@ -497,8 +476,8 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
           height: 8,
           decoration: BoxDecoration(
             color: Color.lerp(
-              const Color(0xFFBDBDBD),
-              const Color(0xFF6C63FF),
+              colorScheme.onSurfaceVariant,
+              colorScheme.primary,
               (value + index * 0.3) % 1,
             ),
             shape: BoxShape.circle,
@@ -518,13 +497,14 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   }
 
   void _showOptionsMenu(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
           child: Column(
@@ -535,7 +515,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0E0E0),
+                  color: colorScheme.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -582,19 +562,21 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   }
 
   Widget _buildMenuOption(IconData icon, String title, VoidCallback onTap) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF6C63FF).withOpacity(0.1),
+          color: colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: const Color(0xFF6C63FF)),
+        child: Icon(icon, color: colorScheme.primary),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
         ),
       ),
       onTap: onTap,
