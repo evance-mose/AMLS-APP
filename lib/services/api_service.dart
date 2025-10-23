@@ -191,7 +191,7 @@ class ApiService {
     try {
       print('Fetching monthly report from: $baseUrl/reports/monthly');
       final response = await http.get(
-        Uri.parse('$baseUrl/reports/monthly'),
+        Uri.parse('$baseUrl/analytics/monthly'),
         headers: headers,
       );
       
