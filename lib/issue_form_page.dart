@@ -267,16 +267,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
                       readOnly: widget.isViewOnly,
                     ),
                     const SizedBox(height: 16),
-                    _buildTextFormField(
-                      controller: _issueController,
-                      labelText: 'Issue Description',
-                      hintText: 'e.g., Card reader not working',
-                      icon: Icons.bug_report_outlined,
-                      validatorMessage: 'Please enter an issue description',
-                      readOnly: widget.isViewOnly,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDropdownFormField(
+                       _buildDropdownFormField(
                       value: _selectedCategory,
                       labelText: 'Category',
                       icon: Icons.category_outlined,
@@ -290,7 +281,15 @@ class _IssueFormPageState extends State<IssueFormPage> {
                             },
                       readOnly: widget.isViewOnly,
                     ),
-                    
+                    const SizedBox(height: 16),
+                    _buildTextFormField(
+                      controller: _issueController,
+                      labelText: 'Issue Description',
+                      hintText: 'e.g., Card reader not working',
+                      icon: Icons.bug_report_outlined,
+                      validatorMessage: 'Please enter an issue description',
+                      readOnly: widget.isViewOnly,
+                    ),
                     const SizedBox(height: 32),
                     
                     _buildTextFormField(

@@ -15,7 +15,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Fetch data when the page loads
     context.read<HomeCubit>().fetchHomeSummary();
   }
 
@@ -45,12 +44,11 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            icon: Badge(
-              label: const Text('3'),
-              child: Icon(Icons.notifications_outlined, color: colorScheme.onSurface),
+             onPressed: () {
+              Navigator.pushNamed(context, '/ai-assistant');
+              },
+            icon: Icon(Icons.psychology_outlined, color: colorScheme.onSurface),
             ),
-            onPressed: () {},
-          ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
             onSelected: (value) {
@@ -69,7 +67,6 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () {
                           Navigator.pop(context);
                           context.read<AuthCubit>().logout();
-                          // Navigation back to login is handled by main.dart BlocBuilder
                         },
                         child: Text('Logout', style: TextStyle(color: colorScheme.error)),
                       ),
@@ -169,22 +166,13 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Monthly Report Header
                       if (state.monthlyReport != null) ...[
                         _buildMonthlyReportHeader(context, state.monthlyReport!),
                         const SizedBox(height: 24),
                       ],
-
-                    
                       const SizedBox(height: 16),
-
-                      // KPI Cards Grid
                       _buildKPIGrid(context, state),
                       const SizedBox(height: 32),
-
-                    
-
-                      // Quick Actions Section
                       Text(
                         'Quick Actions',
                         style: textTheme.titleLarge?.copyWith(
@@ -193,9 +181,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
-                      // Modern Action Cards
                       _buildModernActionCards(context),
+                      const SizedBox(height: 80), // Space for FAB
                     ],
                   ),
                 ),
@@ -208,6 +195,7 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+   
     );
   }
   
@@ -600,117 +588,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildIssueStatsOverview(BuildContext context, IssueStats stats) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.assessment_outlined,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Issue Statistics Overview',
-                style: textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Total Issues',
-                  stats.total.toString(),
-                  Colors.blue,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Resolved',
-                  stats.resolved.toString(),
-                  Colors.green,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Pending',
-                  stats.pending.toString(),
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(BuildContext context, String label, String value, Color color) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
   Widget _buildModernActionCards(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -718,20 +595,20 @@ class _HomePageState extends State<HomePage> {
       children: [
         _buildModernActionCard(
           context,
-          'Maintenance Logs',
-          'View and manage all maintenance activities',
-          Icons.build_circle_outlined,
-          [colorScheme.primary, colorScheme.primary.withOpacity(0.7)],
-          () => Navigator.pushNamed(context, '/logs'),
-        ),
-        const SizedBox(height: 12),
-        _buildModernActionCard(
-          context,
           'Issues & Reports',
           'Track and resolve reported issues',
           Icons.warning_amber_outlined,
           [Colors.red, Colors.red.withOpacity(0.7)],
           () => Navigator.pushNamed(context, '/issues'),
+        ),
+        const SizedBox(height: 12),
+        _buildModernActionCard(
+          context,
+          'Maintenance Logs',
+          'View and manage all maintenance activities',
+          Icons.build_circle_outlined,
+          [colorScheme.primary, colorScheme.primary.withOpacity(0.7)],
+          () => Navigator.pushNamed(context, '/logs'),
         ),
       ],
     );

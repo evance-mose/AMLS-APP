@@ -8,6 +8,7 @@ import 'home_page.dart';
 import 'issues_page.dart';
 import 'login_page.dart';
 import 'logs_page.dart';
+import 'ai_assistant_page.dart';
 
 
 void main() {
@@ -97,6 +98,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/logs': (context) => const MaintenanceLogsScreen(),
           '/issues': (context) => const IssuesScreen(),
+          '/ai-assistant': (context) => const AIAssistantPage()
         },
       ),
     );
