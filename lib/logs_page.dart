@@ -324,7 +324,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            final result = await Navigator.push<Map<String, dynamic>>(
+            final result = await Navigator.push<dynamic>(
               context,
               MaterialPageRoute(
                 builder: (context) => LogFormPage(log: log, isViewOnly: true),
@@ -332,11 +332,11 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
             );
 
             if (result != null) {
-              if (result.containsKey('action') && result['action'] == 'delete') {
+              if (result is Map<String, dynamic> && result.containsKey('action') && result['action'] == 'delete') {
                 _confirmDeleteLog(log);
-              } else {
-                // Assuming result is a Log object if not a delete action
-                context.read<LogCubit>().updateLog(log, result as Log);
+              } else if (result is Log) {
+                // Result is a Log object from editing
+                context.read<LogCubit>().updateLog(log, result);
               }
             }
           },

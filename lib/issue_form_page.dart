@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amls/models/issue_model.dart'; // Import the Issue model
+import 'package:amls/models/user_model.dart';
+import 'package:amls/services/api_service.dart';
 
 extension StringExtension on String {
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
@@ -24,7 +26,9 @@ class _IssueFormPageState extends State<IssueFormPage> {
   late TextEditingController _reportedDateController;
   late String _selectedStatus;
   late String _selectedCategory;
-  late TextEditingController _assignedToController; // New controller
+  late int? _selectedAssignedUserId;
+  List<User> _availableUsers = [];
+  bool _isLoadingUsers = true;
 
   final List<String> _priorities = IssuePriority.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
   final List<String> _statuses = IssueStatus.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
@@ -40,7 +44,9 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _reportedDateController = TextEditingController(text: widget.issue?.reportedDate.toIso8601String().split('T').first ?? '');
     _selectedStatus = widget.issue?.status.toString().split('.').last.toCapitalized() ?? _statuses.first;
     _selectedCategory = widget.issue?.category.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _categories.first;
-    _assignedToController = TextEditingController(text: widget.issue?.assignedUser?.name ?? ''); // Initialize new controller
+    _selectedAssignedUserId = widget.issue?.assignedTo; // Initialize selected user ID
+    
+    _fetchUsers();
   }
 
   @override
@@ -49,8 +55,36 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _locationController.dispose();
     _issueController.dispose();
     _reportedDateController.dispose();
-    _assignedToController.dispose(); // Dispose new controller
     super.dispose();
+  }
+
+  void _fetchUsers() async {
+    try {
+      final users = await ApiService.fetchUsers();
+      // Filter users to only show admin and technician roles
+      final filteredUsers = users.where((user) => 
+        user.role == UserRole.admin || user.role == UserRole.technician
+      ).toList();
+      
+      setState(() {
+        _availableUsers = filteredUsers;
+        _isLoadingUsers = false;
+      });
+    } catch (e) {
+      print('Error fetching users: $e');
+      setState(() {
+        _isLoadingUsers = false;
+      });
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load users: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _selectDate() async {
@@ -88,12 +122,14 @@ class _IssueFormPageState extends State<IssueFormPage> {
         priority: IssuePriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
         reportedDate: DateTime.tryParse(_reportedDateController.text) ?? DateTime.now(),
         status: IssueStatus.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedStatus),
-        assignedTo: widget.issue?.assignedTo,
+        assignedTo: _selectedAssignedUserId,
         createdAt: widget.issue?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
         userId: widget.issue?.userId,
         user: widget.issue?.user,
-        assignedUser: widget.issue?.assignedUser,
+        assignedUser: _selectedAssignedUserId != null 
+          ? _availableUsers.firstWhere((user) => user.id == _selectedAssignedUserId)
+          : null,
       );
       Navigator.pop(context, newIssue);
     }
@@ -334,12 +370,19 @@ class _IssueFormPageState extends State<IssueFormPage> {
                       readOnly: widget.isViewOnly,
                     ),
                     const SizedBox(height: 16),
-                    _buildTextFormField(
-                      controller: _assignedToController,
+                    _buildUserDropdownFormField(
+                      value: _selectedAssignedUserId,
                       labelText: 'Assigned To',
-                      hintText: 'e.g., Jane Doe',
                       icon: Icons.person_outline,
-                      validatorMessage: 'Please enter who the issue is assigned to',
+                      users: _availableUsers,
+                      isLoading: _isLoadingUsers,
+                      onChanged: widget.isViewOnly
+                          ? null
+                          : (int? newValue) {
+                              setState(() {
+                                _selectedAssignedUserId = newValue;
+                              });
+                            },
                       readOnly: widget.isViewOnly,
                     ),
                     
@@ -556,6 +599,109 @@ class _IssueFormPageState extends State<IssueFormPage> {
         onChanged: readOnly ? null : onChanged,
         dropdownColor: colorScheme.surface,
         icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+
+  Widget _buildUserDropdownFormField({
+    required int? value,
+    required String labelText,
+    required List<User> users,
+    required bool isLoading,
+    required IconData icon,
+    ValueChanged<int?>? onChanged,
+    bool readOnly = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // Create a list of all possible values to check if the current value is valid
+    final validValues = <int?>[null, ...users.map((user) => user.id)];
+    
+    // Ensure the current value is valid, otherwise use null
+    final currentValue = validValues.contains(value) ? value : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: readOnly ? colorScheme.surfaceVariant.withOpacity(0.3) : colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.3),
+        ),
+        boxShadow: readOnly
+            ? []
+            : [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: DropdownButtonFormField<int>(
+        value: currentValue,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+        ),
+        items: [
+          // Add "None" option
+          DropdownMenuItem<int>(
+            value: null,
+            child: Text(
+              'None',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          // Add user options - ensure no duplicate IDs
+          ...users.map((User user) {
+            return DropdownMenuItem<int>(
+              value: user.id,
+              child: Text(
+                '${user.name} (${user.role.toString().split('.').last.toCapitalized()})',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+        onChanged: readOnly ? null : onChanged,
+        dropdownColor: colorScheme.surface,
+        icon: isLoading 
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            )
+          : Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
       ),
     );
   }

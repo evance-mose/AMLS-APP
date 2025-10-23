@@ -58,6 +58,9 @@ class _LogFormPageState extends State<LogFormPage> {
 
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
+      // Parse the date and time from form fields
+      final dateTime = _parseDateTimeFromForm();
+      
       final newLog = Log(
         id: widget.log?.id ?? 0, // ID generation is handled by Cubit
         userId: widget.log?.userId ?? 1, // Use existing userId or default
@@ -66,12 +69,35 @@ class _LogFormPageState extends State<LogFormPage> {
         category: LogCategory.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedCategory),
         status: LogStatus.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedStatus),
         priority: LogPriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
-        createdAt: widget.log?.createdAt ?? DateTime.now(),
+        createdAt: dateTime,
         updatedAt: DateTime.now(),
         user: widget.log?.user,
         issue: widget.log?.issue,
       );
       if (mounted) Navigator.pop(context, newLog);
+    }
+  }
+
+  DateTime _parseDateTimeFromForm() {
+    try {
+      final dateStr = _dateController.text;
+      final timeStr = _timeController.text;
+      
+      if (dateStr.isNotEmpty && timeStr.isNotEmpty) {
+        final date = DateTime.parse(dateStr);
+        final timeParts = timeStr.split(':');
+        final hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        
+        return DateTime(date.year, date.month, date.day, hour, minute);
+      } else if (dateStr.isNotEmpty) {
+        return DateTime.parse(dateStr);
+      } else {
+        return widget.log?.createdAt ?? DateTime.now();
+      }
+    } catch (e) {
+      print('Error parsing date/time: $e');
+      return widget.log?.createdAt ?? DateTime.now();
     }
   }
 

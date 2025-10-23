@@ -349,7 +349,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
-            final result = await Navigator.push<Map<String, dynamic>>(
+            final result = await Navigator.push<dynamic>(
               context,
               MaterialPageRoute(
                 builder: (context) => IssueFormPage(issue: issue, isViewOnly: true),
@@ -357,11 +357,11 @@ class _IssuesScreenState extends State<IssuesScreen> {
             );
 
             if (result != null) {
-              if (result.containsKey('action') && result['action'] == 'delete') {
+              if (result is Map<String, dynamic> && result.containsKey('action') && result['action'] == 'delete') {
                 _confirmDeleteIssue(issue);
-              } else {
-                // Assuming result is an Issue object if not a delete action
-                context.read<IssueCubit>().updateIssue(issue, result as Issue);
+              } else if (result is Issue) {
+                // Result is an Issue object from editing
+                context.read<IssueCubit>().updateIssue(issue, result);
               }
             }
           },

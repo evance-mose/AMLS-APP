@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:amls/models/log_model.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
+import 'package:amls/models/user_model.dart';
 import 'package:amls/services/auth_service.dart';
 
 class ApiService {
@@ -168,7 +169,7 @@ class ApiService {
   static Future<Issue> updateIssue(int id, Issue issue) async {
     try {
       final headers = await _getHeaders();
-      final response = await http.put(
+      final response = await http.patch(
         Uri.parse('$baseUrl/issues/$id'),
         headers: headers,
         body: json.encode(issue.toJson()),
@@ -224,6 +225,40 @@ class ApiService {
     } catch (e) {
       print('Monthly Report API Error: $e');
       throw Exception('Error fetching monthly report: $e');
+    }
+  }
+
+  // Fetch all users
+  static Future<List<User>> fetchUsers() async {
+    try {
+      print('Fetching users from: $baseUrl/users');
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/users'),
+        headers: headers,
+      );
+      
+      print('Users Response status: ${response.statusCode}');
+      print('Users Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        print('Parsed ${jsonData.length} users');
+        return jsonData.map((json) {
+          try {
+            return User.fromJson(json);
+          } catch (e) {
+            print('Error parsing user: $e');
+            print('Problematic JSON: $json');
+            rethrow;
+          }
+        }).toList();
+      } else {
+        throw Exception('Failed to fetch users: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Users API Error: $e');
+      throw Exception('Error fetching users: $e');
     }
   }
 }
