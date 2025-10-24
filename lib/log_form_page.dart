@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:amls/models/log_model.dart'; // Import the Log model
+import 'package:amls/models/log_model.dart';
+import 'package:amls/models/user_model.dart';
+import 'package:amls/services/api_service.dart';
 
 extension StringExtension on String {
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
 }
 
 class LogFormPage extends StatefulWidget {
-  final Log? log; // Change type to Log
+  final Log? log;
   final bool isViewOnly;
 
   const LogFormPage({super.key, this.log, this.isViewOnly = false});
@@ -21,11 +23,13 @@ class _LogFormPageState extends State<LogFormPage> {
   late TextEditingController _locationController;
   late TextEditingController _dateController;
   late TextEditingController _timeController;
-  late TextEditingController _technicianController;
   late TextEditingController _actionTakenController;
   late String _selectedStatus;
   late String _selectedCategory;
-  late String _selectedPriority; // New field for priority
+  late String _selectedPriority;
+  late int? _selectedUserId;
+  List<User> _availableUsers = [];
+  bool _isLoadingUsers = true;
 
   final List<String> _statuses = LogStatus.values.map((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized()).toList();
   final List<String> _priorities = LogPriority.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
@@ -38,11 +42,13 @@ class _LogFormPageState extends State<LogFormPage> {
     _locationController = TextEditingController(text: widget.log?.issue?.location ?? '');
     _dateController = TextEditingController(text: widget.log?.createdAt.toIso8601String().split('T').first ?? '');
     _timeController = TextEditingController(text: '${widget.log?.createdAt.hour.toString().padLeft(2, '0')}:${widget.log?.createdAt.minute.toString().padLeft(2, '0')}' ?? '');
-    _technicianController = TextEditingController(text: widget.log?.user?.name ?? ''); // Use user name
-    _actionTakenController = TextEditingController(text: widget.log?.actionTaken ?? ''); // Use text controller for actionTaken
+    _actionTakenController = TextEditingController(text: widget.log?.actionTaken ?? '');
     _selectedStatus = widget.log?.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _statuses.first;
     _selectedCategory = widget.log?.category.toString().split('.').last.replaceAll('_', ' ').toCapitalized() ?? _categories.first;
     _selectedPriority = widget.log?.priority.toString().split('.').last.toCapitalized() ?? _priorities.first;
+    _selectedUserId = widget.log?.userId;
+    
+    _fetchUsers();
   }
 
   @override
@@ -51,30 +57,74 @@ class _LogFormPageState extends State<LogFormPage> {
     _locationController.dispose();
     _dateController.dispose();
     _timeController.dispose();
-    _technicianController.dispose();
     _actionTakenController.dispose();
     super.dispose();
   }
 
+  void _fetchUsers() async {
+    try {
+      final users = await ApiService.fetchUsers();
+      // Filter users to only show admin and technician roles
+      final filteredUsers = users.where((user) => 
+        user.role == UserRole.admin || user.role == UserRole.technician
+      ).toList();
+      
+      if (mounted) {
+        setState(() {
+          _availableUsers = filteredUsers;
+          _isLoadingUsers = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching users: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingUsers = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load users: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
-      // Parse the date and time from form fields
+      // Find the assigned user safely
+      User? assignedUser;
+      if (_selectedUserId != null && _availableUsers.isNotEmpty) {
+        try {
+          assignedUser = _availableUsers.firstWhere(
+            (user) => user.id == _selectedUserId,
+          );
+        } catch (e) {
+          print('Warning: Assigned user not found in available users: $e');
+          assignedUser = null;
+        }
+      }
+
       final dateTime = _parseDateTimeFromForm();
       
       final newLog = Log(
-        id: widget.log?.id ?? 0, // ID generation is handled by Cubit
-        userId: widget.log?.userId ?? 1, // Use existing userId or default
+        id: widget.log?.id ?? 0,
+        userId: _selectedUserId ?? widget.log?.userId ?? 1,
         issueId: widget.log?.issueId,
-        actionTaken: _actionTakenController.text.isEmpty ? null : _actionTakenController.text, // Use text controller
+        actionTaken: _actionTakenController.text.isEmpty ? null : _actionTakenController.text,
         category: LogCategory.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedCategory),
         status: LogStatus.values.firstWhere((e) => e.toString().split('.').last.replaceAll('_', ' ').toCapitalized() == _selectedStatus),
         priority: LogPriority.values.firstWhere((e) => e.toString().split('.').last.toCapitalized() == _selectedPriority),
         createdAt: dateTime,
         updatedAt: DateTime.now(),
-        user: widget.log?.user,
+        user: assignedUser,
         issue: widget.log?.issue,
       );
-      if (mounted) Navigator.pop(context, newLog);
+      
+      if (mounted) {
+        Navigator.of(context).pop(newLog);
+      }
     }
   }
 
@@ -118,7 +168,7 @@ class _LogFormPageState extends State<LogFormPage> {
         );
       },
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         _dateController.text = picked.toIso8601String().split('T').first;
       });
@@ -155,7 +205,7 @@ class _LogFormPageState extends State<LogFormPage> {
         );
       },
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         _timeController.text = picked.format(context);
       });
@@ -195,7 +245,11 @@ class _LogFormPageState extends State<LogFormPage> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () {
+                if (mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -209,7 +263,9 @@ class _LogFormPageState extends State<LogFormPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                if (mounted) Navigator.pop(context, {'action': 'delete'});
+                if (mounted) {
+                  Navigator.of(context).pop({'action': 'delete'});
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.error,
@@ -247,7 +303,9 @@ class _LogFormPageState extends State<LogFormPage> {
             child: Icon(Icons.arrow_back, color: colorScheme.onSurface, size: 20),
           ),
           onPressed: () {
-            if (mounted) Navigator.pop(context);
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
           },
         ),
         title: Column(
@@ -276,15 +334,14 @@ class _LogFormPageState extends State<LogFormPage> {
                     child: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
                   ),
                   onPressed: () async {
-                    if (mounted) Navigator.pop(context);
-                    final updatedLog = await Navigator.push<Log?>(
-                      context,
+                    final updatedLog = await Navigator.of(context).push<Log?>(
                       MaterialPageRoute(
-                        builder: (context) => LogFormPage(log: widget.log),
+                        builder: (context) => LogFormPage(log: widget.log, isViewOnly: false),
                       ),
                     );
+                    
                     if (updatedLog != null && mounted) {
-                      Navigator.pop(context, updatedLog);
+                      Navigator.of(context).pop(updatedLog);
                     }
                   },
                 ),
@@ -343,7 +400,7 @@ class _LogFormPageState extends State<LogFormPage> {
                       onTap: widget.isViewOnly ? null : _selectDate,
                       readOnly: true,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(height: 16),
                     _buildTextFormField(
                       controller: _timeController,
                       labelText: 'Time',
@@ -356,12 +413,19 @@ class _LogFormPageState extends State<LogFormPage> {
                     
                     const SizedBox(height: 32),
                 
-                    _buildTextFormField(
-                      controller: _technicianController,
+                    _buildUserDropdownFormField(
+                      value: _selectedUserId,
                       labelText: 'Technician',
-                      hintText: 'e.g., John Smith',
                       icon: Icons.person_outline,
-                      validatorMessage: 'Please enter a technician name',
+                      users: _availableUsers,
+                      isLoading: _isLoadingUsers,
+                      onChanged: widget.isViewOnly
+                          ? null
+                          : (int? newValue) {
+                              setState(() {
+                                _selectedUserId = newValue;
+                              });
+                            },
                       readOnly: widget.isViewOnly,
                     ),
                     const SizedBox(height: 16),
@@ -425,7 +489,6 @@ class _LogFormPageState extends State<LogFormPage> {
               ),
             ),
             
-            // Save Button (only shown when not view-only)
             if (!widget.isViewOnly)
               Container(
                 padding: const EdgeInsets.all(20),
@@ -619,7 +682,6 @@ class _LogFormPageState extends State<LogFormPage> {
           ),
         ),
         items: [
-          // Add placeholder item for null values
           if (value == null)
             DropdownMenuItem<String>(
               value: null,
@@ -650,4 +712,101 @@ class _LogFormPageState extends State<LogFormPage> {
     );
   }
 
+  Widget _buildUserDropdownFormField({
+    required int? value,
+    required String labelText,
+    required List<User> users,
+    required bool isLoading,
+    required IconData icon,
+    ValueChanged<int?>? onChanged,
+    bool readOnly = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final validValues = <int?>[null, ...users.map((user) => user.id)];
+    final currentValue = validValues.contains(value) ? value : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: readOnly ? colorScheme.surfaceVariant.withOpacity(0.3) : colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.3),
+        ),
+        boxShadow: readOnly
+            ? []
+            : [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: DropdownButtonFormField<int>(
+        value: currentValue,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+        ),
+        items: [
+          DropdownMenuItem<int>(
+            value: null,
+            child: Text(
+              'None',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          ...users.map((User user) {
+            return DropdownMenuItem<int>(
+              value: user.id,
+              child: Text(
+                '${user.name} (${user.role.toString().split('.').last.toCapitalized()})',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+        onChanged: readOnly ? null : onChanged,
+        dropdownColor: colorScheme.surface,
+        icon: isLoading 
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            )
+          : Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
 }
