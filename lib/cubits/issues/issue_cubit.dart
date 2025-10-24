@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/services/api_instances.dart';
+import 'package:amls/services/api_service.dart';
 
 part 'issue_state.dart';
 
@@ -20,6 +21,18 @@ class IssueCubit extends Cubit<IssueState> {
     }
   }
 
+ void addLog(Issue log) async {
+    emit(IssueLoading());
+    
+    try {
+      await ApiService.createLog(log);
+      // Refresh the logs list after successful creation
+      fetchIssues();
+    } catch (e) {
+     
+      emit(IssueError('Error Assigning issue: $e'));
+    }
+  }
   void addIssue(Issue issue) async {
     emit(IssueLoading());
     

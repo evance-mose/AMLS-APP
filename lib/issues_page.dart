@@ -336,6 +336,9 @@ class _IssuesScreenState extends State<IssuesScreen> {
               } else if (result is Issue) {
                 // Result is an Issue object from editing
                 context.read<IssueCubit>().updateIssue(issue, result);
+            
+                  context.read<IssueCubit>().addLog(result);
+                
               }
             }
           },

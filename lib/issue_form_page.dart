@@ -266,6 +266,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
         ),
         actions: widget.isViewOnly
             ? [
+              
                 IconButton(
                   icon: Container(
                     padding: const EdgeInsets.all(8),
@@ -400,6 +401,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
                       readOnly: widget.isViewOnly,
                     ),
                     const SizedBox(height: 16),
+                    if(widget.isViewOnly || widget.issue != null )
                     _buildUserDropdownFormField(
                       value: _selectedAssignedUserId,
                       labelText: 'Assigned To',
@@ -415,6 +417,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
                             },
                       readOnly: widget.isViewOnly,
                     ),
+                     
                     
                     const SizedBox(height: 24),
                   ],

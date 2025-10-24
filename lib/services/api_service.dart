@@ -55,25 +55,43 @@ class ApiService {
   }
 
   // Create a new log
-  static Future<Log> createLog(Log log) async {
-    try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$baseUrl/logs'),
-        headers: headers,
-        body: json.encode(log.toJson()),
-      );
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return Log.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to create log: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error creating log: $e');
+static Future<Issue> createLog(Issue log) async {
+  try {
+    // Convert enum values to lowercase strings matching Laravel validation
+    String statusValue = log.status.name.toLowerCase(); // e.g., "pending", "in_progress"
+    String priorityValue = log.priority.name.toLowerCase(); // e.g., "low", "medium", "high"
+    
+    // Handle if your enum uses camelCase (e.g., inProgress -> in_progress)
+    statusValue = statusValue.replaceAllMapped(
+      RegExp(r'([A-Z])'), 
+      (match) => '_${match.group(0)!.toLowerCase()}'
+    );
+    
+    Map<String, dynamic> newLog = {
+      'user_id': log.userId,
+      'issue_id': log.id,
+      'action_taken': '',
+      'status': statusValue,
+      'priority': priorityValue,
+    };
+    
+    final headers = await _getHeaders();
+    
+    final response = await http.post(
+      Uri.parse('$baseUrl/logs'),
+      headers: headers,
+      body: json.encode(newLog),
+    );
+    
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return Issue.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to create log: ${response.statusCode} - ${response.body}');
     }
+  } catch (e) {
+    throw Exception('Error creating log: $e');
   }
-
+}
   // Update an existing log
   static Future<Log> updateLog(int id, Log log) async {
     try {
