@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: colorScheme.primary,
             foregroundColor: colorScheme.onPrimary,
             icon: const Icon(Icons.psychology_outlined),
-            label: const Text('AI Agent'),
+            label: const Text('AI Assistant'),
             elevation: 4,
           ),
    
