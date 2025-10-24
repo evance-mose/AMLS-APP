@@ -168,8 +168,9 @@ class ApiService {
   // Update an existing issue
   static Future<Issue> updateIssue(int id, Issue issue) async {
     try {
+      print('Update Issue Response body: ${issue.toJson()}');
       final headers = await _getHeaders();
-      final response = await http.patch(
+      final response = await http.put(
         Uri.parse('$baseUrl/issues/$id'),
         headers: headers,
         body: json.encode(issue.toJson()),
