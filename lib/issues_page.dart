@@ -99,33 +99,7 @@ class _IssuesScreenState extends State<IssuesScreen> {
                 ),
               ],
             ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.search, color: colorScheme.onSurface, size: 20),
-                ),
-                onPressed: () {
-                  // Implement search functionality
-                },
-              ),
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
-                ),
-                onPressed: _showMoreOptions,
-              ),
-              const SizedBox(width: 8),
-            ],
+           
           ),
           body: Column(
             children: [

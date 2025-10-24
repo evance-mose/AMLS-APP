@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: colorScheme.background,
+      
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -43,12 +44,7 @@ class _HomePageState extends State<HomePage> {
               context.read<HomeCubit>().fetchHomeSummary();
             },
           ),
-          IconButton(
-             onPressed: () {
-              Navigator.pushNamed(context, '/ai-assistant');
-              },
-            icon: Icon(Icons.psychology_outlined, color: colorScheme.onSurface),
-            ),
+    
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
             onSelected: (value) {
@@ -195,6 +191,16 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+       floatingActionButton: FloatingActionButton.extended(
+            onPressed: ()  {
+              Navigator.pushNamed(context, '/ai-assistant');
+            },
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            icon: const Icon(Icons.psychology_outlined),
+            label: const Text('AI Agent'),
+            elevation: 4,
+          ),
    
     );
   }

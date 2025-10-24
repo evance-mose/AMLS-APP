@@ -100,33 +100,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                 ),
               ],
             ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.search, color: colorScheme.onSurface, size: 20),
-                ),
-                onPressed: () {
-                  // Implement search functionality
-                },
-              ),
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
-                ),
-                onPressed: _showMoreOptions,
-              ),
-              const SizedBox(width: 8),
-            ],
+
           ),
           body: Column(
             children: [
@@ -291,23 +265,7 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () async {
-              final newLog = await Navigator.push<Log?>(
-                context,
-                MaterialPageRoute(builder: (context) => const LogFormPage()),
-              );
-
-              if (newLog != null) {
-                context.read<LogCubit>().addLog(newLog);
-              }
-            },
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            icon: const Icon(Icons.add),
-            label: const Text('Create Log'),
-            elevation: 4,
-          ),
+         
         );
       },
     );
