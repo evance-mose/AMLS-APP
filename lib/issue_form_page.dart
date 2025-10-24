@@ -248,8 +248,10 @@ class _IssueFormPageState extends State<IssueFormPage> {
             }
           },
         ),
+         centerTitle: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+         
           children: [
             Text(
               widget.isViewOnly

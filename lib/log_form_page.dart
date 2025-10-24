@@ -291,6 +291,7 @@ class _LogFormPageState extends State<LogFormPage> {
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
+        centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(

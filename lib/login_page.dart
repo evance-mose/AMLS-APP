@@ -72,14 +72,19 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Logo/Icon
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.primary,
+                          
+                            //image should be in the center of the screen and sounded by circle border
+                            Center(
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                child: Image.asset('assets/images/logo.png'),
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 16.0),
-
                             // Title
                             Text(
                               'Welcome Back',
@@ -202,24 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 12.0),
-
-                            // Forgot Password
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  // Handle forgot password
-                                },
-                                child: Text(
-                                  'Forgot Password?',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
+                           
                             const SizedBox(height: 24.0),
 
                             // Login Button
@@ -248,37 +236,9 @@ class _LoginPageState extends State<LoginPage> {
                                       style: Theme.of(context).textTheme.labelLarge,
                                     ),
                             ),
-                            const SizedBox(height: 24.0),
+                           
 
-                            // Sign Up Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    // Handle sign up
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(0, 0),
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    'Sign Up',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+
                           ],
                         ),
                       ),
