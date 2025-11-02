@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amls/services/api_service.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/user_form_page.dart';
 
 extension StringExtension on String {
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
@@ -373,6 +374,43 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final newUser = await Navigator.push<User?>(
+            context,
+            MaterialPageRoute(builder: (context) => const UserFormPage()),
+          );
+
+          if (newUser != null) {
+            try {
+              await ApiService.createUser(newUser);
+              _fetchUsers();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('User ${newUser.name} created successfully'),
+                    backgroundColor: colorScheme.primary,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to create user: $e'),
+                    backgroundColor: colorScheme.error,
+                  ),
+                );
+              }
+            }
+          }
+        },
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        icon: const Icon(Icons.add),
+        label: const Text('Add User'),
+        elevation: 4,
+      ),
     );
   }
 
@@ -404,8 +442,42 @@ class _UsersScreenState extends State<UsersScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            // TODO: Navigate to user edit page
+          onTap: () async {
+            final result = await Navigator.push<dynamic>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserFormPage(user: user, isViewOnly: true),
+              ),
+            );
+
+            if (result != null) {
+              if (result is Map<String, dynamic> && result.containsKey('action') && result['action'] == 'delete') {
+                _deleteUser(result['user'] as User);
+              } else if (result is User) {
+                // Result is a User object from editing
+                try {
+                  await ApiService.updateUser(result.id, result);
+                  _fetchUsers();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('User ${result.name} updated successfully'),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update user: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
+              }
+            }
           },
           borderRadius: BorderRadius.circular(16),
           child: Container(
@@ -515,31 +587,6 @@ class _UsersScreenState extends State<UsersScreen> {
                         colorScheme,
                         textTheme,
                       ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Actions Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
-                      onPressed: () {
-                        // TODO: Navigate to edit user page
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Edit user functionality coming soon'),
-                            backgroundColor: colorScheme.primary,
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
-                      onPressed: () => _deleteUser(user),
                     ),
                   ],
                 ),
