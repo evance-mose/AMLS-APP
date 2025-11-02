@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:amls/services/auth_service.dart';
+// ignore: avoid_relative_lib_imports
+import 'package:amls/services/base_url.dart';
 
 abstract class ApiModel {
   int get id;
@@ -8,7 +10,6 @@ abstract class ApiModel {
 }
 
 class GenericApiService<T extends ApiModel> {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
   
   static const Map<String, String> baseHeaders = {
     'Content-Type': 'application/json',
@@ -32,10 +33,10 @@ class GenericApiService<T extends ApiModel> {
   // Fetch all items
   Future<List<T>> fetchAll() async {
     try {
-      print('Fetching $endpoint from: $baseUrl/$endpoint');
+      print('Fetching $endpoint from: ${BaseUrl.baseUrl}/$endpoint');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/$endpoint'),
+        Uri.parse('${BaseUrl.baseUrl}/$endpoint'),
         headers: headers,
       );
       
@@ -68,7 +69,7 @@ class GenericApiService<T extends ApiModel> {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/$endpoint'),
+        Uri.parse('${BaseUrl.baseUrl}/$endpoint'),
         headers: headers,
         body: json.encode(item.toJson()),
       );
@@ -88,7 +89,7 @@ class GenericApiService<T extends ApiModel> {
     try {
       final headers = await _getHeaders();
       final response = await http.put(
-        Uri.parse('$baseUrl/$endpoint/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/$endpoint/$id'),
         headers: headers,
         body: json.encode(item.toJson()),
       );
@@ -108,7 +109,7 @@ class GenericApiService<T extends ApiModel> {
     try {
       final headers = await _getHeaders();
       final response = await http.delete(
-        Uri.parse('$baseUrl/$endpoint/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/$endpoint/$id'),
         headers: headers,
       );
       
@@ -125,7 +126,7 @@ class GenericApiService<T extends ApiModel> {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/$endpoint/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/$endpoint/$id'),
         headers: headers,
       );
       

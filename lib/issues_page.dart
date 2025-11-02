@@ -290,33 +290,6 @@ class _IssuesScreenState extends State<IssuesScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    Color priorityColor;
-    Color startColor;
-    Color endColor;
-    switch (issue.priority) {
-      case IssuePriority.critical:
-        priorityColor = Colors.red.shade600;
-        startColor = Colors.red.shade400;
-        endColor = Colors.red.shade600;
-        break;
-      case IssuePriority.high:
-        priorityColor = Colors.deepOrange.shade600;
-        startColor = Colors.deepOrange.shade400;
-        endColor = Colors.deepOrange.shade600;
-        break;
-      case IssuePriority.medium:
-        priorityColor = Colors.amber.shade600;
-        startColor = Colors.amber.shade400;
-        endColor = Colors.amber.shade600;
-        break;
-      default:
-        priorityColor = Colors.green.shade600; // Low priority or other
-        startColor = Colors.green.shade400;
-        endColor = Colors.green.shade600;
-    }
-
-    final isOpen = issue.status == IssueStatus.open || issue.status == IssueStatus.assigned;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -396,40 +369,11 @@ class _IssuesScreenState extends State<IssuesScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isOpen
-                              ? [startColor, endColor]
-                              : [Colors.grey.shade400, Colors.grey.shade600],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: priorityColor.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isOpen ? Icons.priority_high : Icons.check_circle,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            issue.priority.toString().split('.').last.toCapitalized(),
-                            style: textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      issue.priority.toString().split('.').last.toCapitalized(),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],

@@ -5,9 +5,10 @@ import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/services/auth_service.dart';
+// ignore: avoid_relative_lib_imports
+import 'package:amls/services/base_url.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
   
   static const Map<String, String> baseHeaders = {
     'Content-Type': 'application/json',
@@ -23,10 +24,10 @@ class ApiService {
   // Fetch all logs
   static Future<List<Log>> fetchLogs() async {
     try {
-      print('Fetching logs from: $baseUrl/logs');
+      print('Fetching logs from: ${BaseUrl.baseUrl}/logs');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/logs'),
+        Uri.parse('${BaseUrl.baseUrl}/logs'),
         headers: headers,
       );
       
@@ -78,7 +79,7 @@ static Future<Issue> createLog(Issue log) async {
     final headers = await _getHeaders();
     
     final response = await http.post(
-      Uri.parse('$baseUrl/logs'),
+      Uri.parse('${BaseUrl.baseUrl}/logs'),
       headers: headers,
       body: json.encode(newLog),
     );
@@ -97,7 +98,7 @@ static Future<Issue> createLog(Issue log) async {
     try {
       final headers = await _getHeaders();
       final response = await http.put(
-        Uri.parse('$baseUrl/logs/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/logs/$id'),
         headers: headers,
         body: json.encode(log.toJson()),
       );
@@ -117,7 +118,7 @@ static Future<Issue> createLog(Issue log) async {
     try {
       final headers = await _getHeaders();
       final response = await http.delete(
-        Uri.parse('$baseUrl/logs/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/logs/$id'),
         headers: headers,
       );
       
@@ -132,10 +133,10 @@ static Future<Issue> createLog(Issue log) async {
   // Fetch all issues
   static Future<List<Issue>> fetchIssues() async {
     try {
-      print('Fetching issues from: $baseUrl/issues');
+      print('Fetching issues from: ${BaseUrl.baseUrl}/issues');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/issues'),
+        Uri.parse('${BaseUrl.baseUrl}/issues'),
         headers: headers,
       );
       
@@ -168,7 +169,7 @@ static Future<Issue> createLog(Issue log) async {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/issues'),
+        Uri.parse('${BaseUrl.baseUrl}/issues'),
         headers: headers,
         body: json.encode(issue.toJson()),
       );
@@ -189,7 +190,7 @@ static Future<Issue> createLog(Issue log) async {
       print('Update Issue Response body: ${issue.toJson()}');
       final headers = await _getHeaders();
       final response = await http.put(
-        Uri.parse('$baseUrl/issues/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/issues/$id'),
         headers: headers,
         body: json.encode(issue.toJson()),
       );
@@ -209,7 +210,7 @@ static Future<Issue> createLog(Issue log) async {
     try {
       final headers = await _getHeaders();
       final response = await http.delete(
-        Uri.parse('$baseUrl/issues/$id'),
+        Uri.parse('${BaseUrl.baseUrl}/issues/$id'),
         headers: headers,
       );
       
@@ -224,10 +225,10 @@ static Future<Issue> createLog(Issue log) async {
   // Fetch monthly report
   static Future<MonthlyReport> fetchMonthlyReport() async {
     try {
-      print('Fetching monthly report from: $baseUrl/reports/monthly');
+      print('Fetching monthly report from: ${BaseUrl.baseUrl}/reports/monthly');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/analytics/monthly'),
+        Uri.parse('${BaseUrl.baseUrl}/analytics/monthly'),
         headers: headers,
       );
       
@@ -250,10 +251,10 @@ static Future<Issue> createLog(Issue log) async {
   // Fetch all users
   static Future<List<User>> fetchUsers() async {
     try {
-      print('Fetching users from: $baseUrl/users');
+      print('Fetching users from: ${BaseUrl.baseUrl}/users');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/users'),
+        Uri.parse('${BaseUrl.baseUrl}/users'),
         headers: headers,
       );
       

@@ -2,9 +2,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:amls/models/user_model.dart';
+// ignore: avoid_relative_lib_imports
+import 'package:amls/services/base_url.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
 
@@ -19,7 +20,7 @@ class AuthService {
       print('Logging in with email: $email');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/login?email=$email&password=$password'),
+        Uri.parse('${BaseUrl.baseUrl}/login?email=$email&password=$password'),
         headers: headers,
       );
       

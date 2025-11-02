@@ -274,7 +274,6 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
   Widget _buildMaintenanceLogCard(Log log) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isCompleted = log.status == LogStatus.completed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -352,41 +351,11 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isCompleted
-                              ? [Colors.green.shade400, Colors.green.shade600]
-                              : [Colors.orange.shade400, Colors.orange.shade600],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isCompleted ? Colors.green : Colors.orange)
-                                .withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isCompleted ? Icons.check_circle : Icons.schedule,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            log.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized(),
-                            style: textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      log.status.toString().split('.').last.replaceAll('_', ' ').toCapitalized(),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
