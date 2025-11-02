@@ -281,4 +281,61 @@ static Future<Issue> createLog(Issue log) async {
       throw Exception('Error fetching users: $e');
     }
   }
+
+  // Create a new user
+  static Future<User> createUser(User user) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('${BaseUrl.baseUrl}/users'),
+        headers: headers,
+        body: json.encode(user.toJson()),
+      );
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return User.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create user: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error creating user: $e');
+    }
+  }
+
+  // Update an existing user
+  static Future<User> updateUser(int id, User user) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse('${BaseUrl.baseUrl}/users/$id'),
+        headers: headers,
+        body: json.encode(user.toJson()),
+      );
+      
+      if (response.statusCode == 200) {
+        return User.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to update user: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error updating user: $e');
+    }
+  }
+
+  // Delete a user
+  static Future<void> deleteUser(int id) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.delete(
+        Uri.parse('${BaseUrl.baseUrl}/users/$id'),
+        headers: headers,
+      );
+      
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting user: $e');
+    }
+  }
 }

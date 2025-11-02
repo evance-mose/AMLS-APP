@@ -10,6 +10,7 @@ import 'issues_page.dart';
 import 'login_page.dart';
 import 'logs_page.dart';
 import 'ai_assistant_page.dart';
+import 'users_page.dart';
 
 
 Future<void> main() async {
@@ -101,7 +102,8 @@ class MyApp extends StatelessWidget {
         routes: {
           '/logs': (context) => const MaintenanceLogsScreen(),
           '/issues': (context) => const IssuesScreen(),
-          '/ai-assistant': (context) => const AIAssistantPage()
+          '/ai-assistant': (context) => const AIAssistantPage(),
+          '/users': (context) => const UsersScreen(),
         },
       ),
     );
