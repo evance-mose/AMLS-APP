@@ -599,6 +599,15 @@ class _HomePageState extends State<HomePage> {
 
     return Column(
       children: [
+         _buildModernActionCard(
+          context,
+          'User Management',
+          'Manage users, roles, and permissions',
+          Icons.people_outline,
+          [Colors.purple.shade600, Colors.purple.shade400],
+          () => Navigator.pushNamed(context, '/users'),
+        ),
+        const SizedBox(height: 16),
         _buildModernActionCard(
           context,
           'Issues & Reports',
@@ -616,15 +625,7 @@ class _HomePageState extends State<HomePage> {
           [Colors.blue.shade600, Colors.blue.shade400],
           () => Navigator.pushNamed(context, '/logs'),
         ),
-        const SizedBox(height: 16),
-        _buildModernActionCard(
-          context,
-          'User Management',
-          'Manage users, roles, and permissions',
-          Icons.people_outline,
-          [Colors.purple.shade600, Colors.purple.shade400],
-          () => Navigator.pushNamed(context, '/users'),
-        ),
+       
       ],
     );
   }
