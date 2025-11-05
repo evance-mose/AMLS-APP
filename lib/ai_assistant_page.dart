@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:amls/services/api_service.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AIAssistantPage extends StatefulWidget {
   const AIAssistantPage({super.key});
@@ -17,18 +19,12 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   bool _isLoadingSuggestions = false;
   String? _suggestionsError;
   List<String> _quickActions = [];
+  static const String _historyPrefsKey = 'ai_assistant_history';
 
   @override
   void initState() {
     super.initState();
-    // Add initial welcome message
-    _messages.add(
-      ChatMessage(
-        text: "Hello! I'm your ATM Maintenance AI Assistant. I can help you with:\n\n• Diagnosing ATM issues\n• Step-by-step repair guides\n• Maintenance schedules\n• Troubleshooting tips\n• Best practices\n\nHow can I assist you today?",
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
-    );
+    _initializeChat();
     _loadSuggestions();
   }
 
@@ -37,6 +33,62 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeChat() async {
+    final loaded = await _loadHistory();
+    if (!loaded) {
+      setState(() {
+        _messages.add(
+          ChatMessage(
+            text: "Hello! I'm your ATM Maintenance AI Assistant. I can help you with:\n\n• Diagnosing ATM issues\n• Step-by-step repair guides\n• Maintenance schedules\n• Troubleshooting tips\n• Best practices\n\nHow can I assist you today?",
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
+      await _saveHistory();
+    }
+  }
+
+  Future<bool> _loadHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_historyPrefsKey);
+      if (raw == null || raw.isEmpty) return false;
+      final List<dynamic> decoded = json.decode(raw);
+      final loaded = decoded
+          .whereType<Map<String, dynamic>>()
+          .map((e) => ChatMessage.fromJson(e))
+          .toList();
+      if (loaded.isEmpty) return false;
+      setState(() {
+        _messages.clear();
+        _messages.addAll(loaded);
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _saveHistory() async {
+    try {
+      // Cap history to last 200 messages to limit storage size
+      final startIndex = _messages.length > 200 ? _messages.length - 200 : 0;
+      final toSave = _messages.sublist(startIndex).map((m) => m.toJson()).toList();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_historyPrefsKey, json.encode(toSave));
+    } catch (_) {
+      // ignore persistence errors silently
+    }
+  }
+
+  Future<void> _clearHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_historyPrefsKey);
+    } catch (_) {}
   }
 
   Future<void> _loadSuggestions() async {
@@ -78,6 +130,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
 
     _messageController.clear();
     _scrollToBottom();
+    await _saveHistory();
 
     try {
       final reply = await ApiService.askAssistant(userMessage);
@@ -92,6 +145,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         );
         _isTyping = false;
       });
+      await _saveHistory();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -104,6 +158,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         );
         _isTyping = false;
       });
+      await _saveHistory();
     }
     _scrollToBottom();
   }
@@ -601,6 +656,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                       ),
                     );
                   });
+                  _clearHistory();
                 },
               ),
               const SizedBox(height: 20),
@@ -644,4 +700,16 @@ class ChatMessage {
     required this.isUser,
     required this.timestamp,
   });
+
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'isUser': isUser,
+    'timestamp': timestamp.toIso8601String(),
+  };
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+    text: (json['text'] ?? '').toString(),
+    isUser: json['isUser'] == true,
+    timestamp: DateTime.tryParse((json['timestamp'] ?? '').toString()) ?? DateTime.now(),
+  );
 }
