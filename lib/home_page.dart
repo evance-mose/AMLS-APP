@@ -1,6 +1,7 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/home/home_cubit.dart';
 import 'package:amls/models/monthly_report_model.dart';
+import 'package:amls/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -596,18 +597,22 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildModernActionCards(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final authState = context.watch<AuthCubit>().state;
+    final bool isAdmin = authState is AuthAuthenticated && authState.user?.role == UserRole.admin;
 
     return Column(
       children: [
-         _buildModernActionCard(
-          context,
-          'User Management',
-          'Manage users, roles, and permissions',
-          Icons.people_outline,
-          [Colors.purple.shade600, Colors.purple.shade400],
-          () => Navigator.pushNamed(context, '/users'),
-        ),
-        const SizedBox(height: 16),
+        if (isAdmin) ...[
+          _buildModernActionCard(
+            context,
+            'User Management',
+            'Manage users, roles, and permissions',
+            Icons.people_outline,
+            [Colors.purple.shade600, Colors.purple.shade400],
+            () => Navigator.pushNamed(context, '/users'),
+          ),
+          const SizedBox(height: 16),
+        ],
         _buildModernActionCard(
           context,
           'Issues & Reports',
@@ -625,7 +630,6 @@ class _HomePageState extends State<HomePage> {
           [Colors.blue.shade600, Colors.blue.shade400],
           () => Navigator.pushNamed(context, '/logs'),
         ),
-       
       ],
     );
   }
