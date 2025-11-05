@@ -21,6 +21,59 @@ class ApiService {
     return authHeaders;
   }
 
+  // Ask AI Assistant
+  static Future<String> askAssistant(String message) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:8080/assistant'),
+        headers: headers,
+        body: json.encode({
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final reply = data['reply']?.toString();
+        if (reply == null || reply.isEmpty) {
+          throw Exception('Invalid assistant response');
+        }
+        return reply;
+      } else {
+        throw Exception('Assistant request failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error contacting assistant: $e');
+    }
+  }
+
+  // Get AI Assistant quick action suggestions
+  static Future<List<String>> fetchAssistantSuggestions() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('${BaseUrl.baseUrl}/assistant/suggestions'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toList();
+        }
+        if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+          return (decoded['data'] as List).map((e) => e.toString()).toList();
+        }
+        throw Exception('Unexpected suggestions format');
+      } else {
+        throw Exception('Failed to fetch suggestions: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching assistant suggestions: $e');
+    }
+  }
+
   // Fetch all logs
   static Future<List<Log>> fetchLogs() async {
     try {

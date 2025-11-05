@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:amls/services/api_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class AIAssistantPage extends StatefulWidget {
   const AIAssistantPage({super.key});
@@ -12,6 +14,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
+  bool _isLoadingSuggestions = false;
+  String? _suggestionsError;
+  List<String> _quickActions = [];
 
   @override
   void initState() {
@@ -24,6 +29,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         timestamp: DateTime.now(),
       ),
     );
+    _loadSuggestions();
   }
 
   @override
@@ -33,7 +39,29 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  Future<void> _loadSuggestions() async {
+    setState(() {
+      _isLoadingSuggestions = true;
+      _suggestionsError = null;
+    });
+    try {
+      final suggestions = await ApiService.fetchAssistantSuggestions();
+      if (!mounted) return;
+      setState(() {
+        _quickActions = suggestions;
+        _isLoadingSuggestions = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        // Silently ignore errors so the UI hides the suggestions row
+        _suggestionsError = 'error';
+        _isLoadingSuggestions = false;
+      });
+    }
+  }
+
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
     final userMessage = _messageController.text;
@@ -51,38 +79,36 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     _messageController.clear();
     _scrollToBottom();
 
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final reply = await ApiService.askAssistant(userMessage);
+      if (!mounted) return;
       setState(() {
         _messages.add(
           ChatMessage(
-            text: _generateAIResponse(userMessage),
+            text: reply,
             isUser: false,
             timestamp: DateTime.now(),
           ),
         );
         _isTyping = false;
       });
-      _scrollToBottom();
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          ChatMessage(
+            text: 'Failed to get assistant response. Please try again.\n\nError: $e',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+        _isTyping = false;
+      });
+    }
+    _scrollToBottom();
   }
 
-  String _generateAIResponse(String userMessage) {
-    // This is a placeholder. In production, you'd call your AI API here
-    final lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.contains('cash') && lowerMessage.contains('jam')) {
-      return "Cash jam issue detected. Here's a quick guide:\n\n1. Power off the ATM\n2. Open the cash dispenser unit\n3. Remove any jammed bills carefully\n4. Check for torn or damaged notes\n5. Clean the feed rollers\n6. Test dispenser mechanism\n7. Power on and test\n\nWould you like detailed steps for any specific part?";
-    } else if (lowerMessage.contains('card') && (lowerMessage.contains('reader') || lowerMessage.contains('stuck'))) {
-      return "Card reader issue. Follow these steps:\n\n1. Check for physical obstructions\n2. Clean the card reader with approved cleaning card\n3. Verify card reader connections\n4. Check for worn magnetic stripe reader\n5. Test with multiple cards\n\nIf issue persists, the reader may need replacement. Need help ordering parts?";
-    } else if (lowerMessage.contains('screen') || lowerMessage.contains('display')) {
-      return "Display issue troubleshooting:\n\n1. Check power connections\n2. Verify cable connections to motherboard\n3. Test display brightness settings\n4. Look for physical damage\n5. Check for loose connectors\n\nIs the screen completely blank or showing artifacts?";
-    } else if (lowerMessage.contains('maintenance') || lowerMessage.contains('schedule')) {
-      return "Regular ATM maintenance schedule:\n\nDaily:\n• Check cash levels\n• Verify receipt paper\n\nWeekly:\n• Clean card reader\n• Check printer mechanism\n• Inspect exterior\n\nMonthly:\n• Full system diagnostic\n• Update software\n• Clean internal components\n\nWould you like to set up automated reminders?";
-    } else {
-      return "I understand you're asking about: \"$userMessage\"\n\nI can provide detailed guidance on:\n• Hardware troubleshooting\n• Software diagnostics\n• Preventive maintenance\n• Emergency procedures\n\nCould you provide more specific details about the issue you're experiencing?";
-    }
-  }
+  
 
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -153,50 +179,8 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       ),
       body: Column(
         children: [
-          // Quick Action Chips
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildQuickActionChip(
-                    'Cash Jam',
-                    Icons.attach_money,
-                    Colors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildQuickActionChip(
-                    'Card Reader',
-                    Icons.credit_card,
-                    Colors.blue,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildQuickActionChip(
-                    'Screen Issue',
-                    Icons.monitor,
-                    Colors.orange,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildQuickActionChip(
-                    'Maintenance',
-                    Icons.build,
-                    colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Quick Action Chips hidden per request
+          const SizedBox.shrink(),
 
           // Chat Messages
           Expanded(
@@ -264,7 +248,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                     ),
                     child: IconButton(
                       icon: Icon(Icons.send_rounded, color: colorScheme.onPrimary),
-                      onPressed: _sendMessage,
+                      onPressed: _isTyping ? null : _sendMessage,
                     ),
                   ),
                 ],
@@ -308,6 +292,38 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
+  }
+
+  Widget _buildDynamicQuickActionChip(String label, int index) {
+    // Choose icon/color heuristically from label
+    final lower = label.toLowerCase();
+    IconData icon;
+    Color color;
+    final colorScheme = Theme.of(context).colorScheme;
+    if (lower.contains('cash')) {
+      icon = Icons.attach_money;
+      color = Colors.red;
+    } else if (lower.contains('card')) {
+      icon = Icons.credit_card;
+      color = Colors.blue;
+    } else if (lower.contains('screen') || lower.contains('display')) {
+      icon = Icons.monitor;
+      color = Colors.orange;
+    } else if (lower.contains('maint')) {
+      icon = Icons.build;
+      color = colorScheme.primary;
+    } else if (lower.contains('printer')) {
+      icon = Icons.print;
+      color = Colors.teal;
+    } else if (lower.contains('network')) {
+      icon = Icons.wifi;
+      color = Colors.purple;
+    } else {
+      icon = Icons.help_outline;
+      color = colorScheme.primary;
+    }
+
+    return _buildQuickActionChip(label, icon, color);
   }
 
   Widget _buildMessageBubble(ChatMessage message, ColorScheme colorScheme) {
@@ -363,14 +379,48 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
                       ),
                     ],
                   ),
-                  child: Text(
-                    message.text,
-                    style: TextStyle(
-                      color: isUser ? colorScheme.onPrimary : colorScheme.onSurface,
-                      fontSize: 15,
-                      height: 1.5,
-                    ),
-                  ),
+                  child: isUser
+                      ? Text(
+                          message.text,
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontSize: 15,
+                            height: 1.5,
+                          ),
+                        )
+                      : MarkdownBody(
+                          data: message.text,
+                          styleSheet: MarkdownStyleSheet(
+                            p: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                              height: 1.5,
+                            ),
+                            strong: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            listBullet: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
+                            h1: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            h2: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            h3: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 4),
                 Padding(
