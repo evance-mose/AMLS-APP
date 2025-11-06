@@ -276,12 +276,22 @@ static Future<Issue> createLog(Issue log) async {
   }
 
   // Fetch monthly report
-  static Future<MonthlyReport> fetchMonthlyReport() async {
+  static Future<MonthlyReport> fetchMonthlyReport({required int month, required int year}) async {
     try {
-      print('Fetching monthly report from: ${BaseUrl.baseUrl}/reports/monthly');
       final headers = await _getHeaders();
+      // Convert numeric month to name (e.g., 7 -> July)
+      const monthNames = [
+        'January','February','March','April','May','June','July','August','September','October','November','December'
+      ];
+      final String monthName = (month >= 1 && month <= 12) ? monthNames[month - 1] : month.toString();
+      final uri = Uri.parse('${BaseUrl.baseUrl}/reports/monthly')
+          .replace(queryParameters: {
+        'month': monthName,
+        'year': year.toString(),
+      });
+      print('Fetching monthly report via GET: $uri');
       final response = await http.get(
-        Uri.parse('${BaseUrl.baseUrl}/analytics/monthly'),
+        uri,
         headers: headers,
       );
       

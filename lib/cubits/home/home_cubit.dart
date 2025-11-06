@@ -11,12 +11,12 @@ part 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit() : super(HomeInitial());
 
-  void fetchHomeSummary() async {
+  void fetchHomeSummary({required int month, required int year}) async {
     emit(HomeLoading());
     
     try {
       // Fetch monthly report data from API
-      final monthlyReport = await ApiService.fetchMonthlyReport();
+      final monthlyReport = await ApiService.fetchMonthlyReport(month: month, year: year);
       
       // Fetch logs and issues data from API for additional metrics
       final logs = await ApiInstances.logApi.fetchAll();

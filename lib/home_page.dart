@@ -13,10 +13,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
   @override
   void initState() {
     super.initState();
-    context.read<HomeCubit>().fetchHomeSummary();
+    context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
+  }
+  String _monthName(int month) {
+    const months = [
+      'January','February','March','April','May','June','July','August','September','October','November','December'
+    ];
+    if (month < 1 || month > 12) return month.toString();
+    return months[month - 1];
   }
 
   @override
@@ -42,7 +51,7 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: Icon(Icons.refresh, color: colorScheme.onSurface),
             onPressed: () {
-              context.read<HomeCubit>().fetchHomeSummary();
+              context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
             },
           ),
     
@@ -99,7 +108,7 @@ class _HomePageState extends State<HomePage> {
                   label: 'Retry',
                   textColor: Colors.white,
                   onPressed: () {
-                    context.read<HomeCubit>().fetchHomeSummary();
+                    context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
                   },
                 ),
               ),
@@ -141,7 +150,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () {
-                      context.read<HomeCubit>().fetchHomeSummary();
+                      context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -154,7 +163,7 @@ class _HomePageState extends State<HomePage> {
           if (state is HomeLoaded) {
             return RefreshIndicator(
               onRefresh: () async {
-                context.read<HomeCubit>().fetchHomeSummary();
+                context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -163,6 +172,8 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildMonthYearSelectors(context),
+                      const SizedBox(height: 12),
                       if (state.monthlyReport != null) ...[
                         _buildMonthlyReportHeader(context, state.monthlyReport!),
                         const SizedBox(height: 24),
@@ -448,7 +459,7 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  report.reportInfo.date,
+                  '${_monthName(_selectedMonth)} ${_selectedYear}',
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -459,6 +470,77 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMonthYearSelectors(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final months = const [
+      'January','February','March','April','May','June','July','August','September','October','November','December'
+    ];
+    final currentYear = DateTime.now().year;
+    final years = List<int>.generate(6, (i) => currentYear - i);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _selectedMonth,
+                isExpanded: true,
+                icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+                items: List.generate(12, (index) {
+                  final monthIndex = index + 1;
+                  return DropdownMenuItem<int>(
+                    value: monthIndex,
+                    child: Text(months[index], style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                  );
+                }),
+                onChanged: (val) {
+                  if (val == null) return;
+                  setState(() => _selectedMonth = val);
+                  context.read<HomeCubit>().fetchHomeSummary(month: val, year: _selectedYear);
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _selectedYear,
+                isExpanded: true,
+                icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+                items: years.map((y) => DropdownMenuItem<int>(
+                  value: y,
+                  child: Text(y.toString(), style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                )).toList(),
+                onChanged: (val) {
+                  if (val == null) return;
+                  setState(() => _selectedYear = val);
+                  context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: val);
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
