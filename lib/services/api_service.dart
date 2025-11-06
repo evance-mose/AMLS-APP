@@ -339,10 +339,16 @@ static Future<Issue> createLog(Issue log) async {
   static Future<User> createUser(User user) async {
     try {
       final headers = await _getHeaders();
+      final Map<String, dynamic> payload = {
+        ...user.toJson(),
+      };
+      if ((user.password).isNotEmpty) {
+        payload['password_confirmation'] = user.password;
+      }
       final response = await http.post(
         Uri.parse('${BaseUrl.baseUrl}/users'),
         headers: headers,
-        body: json.encode(user.toJson()),
+        body: json.encode(payload),
       );
       
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -359,10 +365,19 @@ static Future<Issue> createLog(Issue log) async {
   static Future<User> updateUser(int id, User user) async {
     try {
       final headers = await _getHeaders();
+      final Map<String, dynamic> payload = {
+        ...user.toJson(),
+      };
+      // Do not send password if not changing it
+      if ((user.password).isEmpty) {
+        payload.remove('password');
+      } else {
+        payload['password_confirmation'] = user.password;
+      }
       final response = await http.put(
         Uri.parse('${BaseUrl.baseUrl}/users/$id'),
         headers: headers,
-        body: json.encode(user.toJson()),
+        body: json.encode(payload),
       );
       
       if (response.statusCode == 200) {

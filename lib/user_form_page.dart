@@ -19,8 +19,11 @@ class _UserFormPageState extends State<UserFormPage> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
   late String _selectedRole;
   late String _selectedStatus;
+  bool _isPasswordObscured = true;
+  bool _isConfirmPasswordObscured = true;
 
   final List<String> _roles = UserRole.values.map((e) => _toCapitalized(e.toString().split('.').last)).toList();
   final List<String> _statuses = UserStatus.values.map((e) => _toCapitalized(e.toString().split('.').last)).toList();
@@ -31,6 +34,7 @@ class _UserFormPageState extends State<UserFormPage> {
     _nameController = TextEditingController(text: widget.user?.name ?? '');
     _emailController = TextEditingController(text: widget.user?.email ?? '');
     _passwordController = TextEditingController(text: '');
+    _confirmPasswordController = TextEditingController(text: '');
     _selectedRole = widget.user != null ? _toCapitalized(widget.user!.role.toString().split('.').last) : _roles.first;
     _selectedStatus = widget.user != null ? _toCapitalized(widget.user!.status.toString().split('.').last) : _statuses.first;
   }
@@ -40,6 +44,7 @@ class _UserFormPageState extends State<UserFormPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -49,7 +54,7 @@ class _UserFormPageState extends State<UserFormPage> {
         id: widget.user?.id ?? 0,
         name: _nameController.text,
         email: _emailController.text,
-        password: _passwordController.text.isEmpty ? (widget.user?.password ?? '') : _passwordController.text,
+        password: _passwordController.text,
         role: UserRole.values.firstWhere((e) => _toCapitalized(e.toString().split('.').last) == _selectedRole),
         status: UserStatus.values.firstWhere((e) => _toCapitalized(e.toString().split('.').last) == _selectedStatus),
         createdAt: widget.user?.createdAt ?? DateTime.now(),
@@ -252,9 +257,59 @@ class _UserFormPageState extends State<UserFormPage> {
                       hintText: 'Enter password',
                       icon: Icons.lock_outline,
                       validatorMessage: widget.user == null ? 'Please enter a password' : null,
-                      obscureText: true,
+                      obscureText: _isPasswordObscured,
                       readOnly: widget.isViewOnly,
+                      suffix: widget.isViewOnly
+                          ? null
+                          : IconButton(
+                              icon: Icon(
+                                _isPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordObscured = !_isPasswordObscured;
+                                });
+                              },
+                            ),
                     ),
+                    if (!widget.isViewOnly)
+                      const SizedBox(height: 16),
+                    if (!widget.isViewOnly)
+                      _buildTextFormField(
+                        controller: _confirmPasswordController,
+                        labelText: 'Confirm Password',
+                        hintText: 'Re-enter password',
+                        icon: Icons.lock_outline,
+                        validatorMessage: widget.user == null ? 'Please confirm the password' : null,
+                        obscureText: _isConfirmPasswordObscured,
+                        readOnly: widget.isViewOnly,
+                        validator: (value) {
+                          final pwd = _passwordController.text;
+                          final confirm = value ?? '';
+                          if (widget.user == null) {
+                            if (confirm.isEmpty) return 'Please confirm the password';
+                            if (confirm != pwd) return 'Passwords do not match';
+                          } else {
+                            if (pwd.isNotEmpty) {
+                              if (confirm.isEmpty) return 'Please confirm the new password';
+                              if (confirm != pwd) return 'Passwords do not match';
+                            }
+                          }
+                          return null;
+                        },
+                        suffix: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isConfirmPasswordObscured = !_isConfirmPasswordObscured;
+                            });
+                          },
+                        ),
+                      ),
                     const SizedBox(height: 32),
                     _buildDropdownFormField(
                       value: _selectedRole,
@@ -355,6 +410,8 @@ class _UserFormPageState extends State<UserFormPage> {
     TextInputType? keyboardType,
     bool obscureText = false,
     bool readOnly = false,
+    String? Function(String?)? validator,
+    Widget? suffix,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -399,6 +456,7 @@ class _UserFormPageState extends State<UserFormPage> {
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),
           ),
+          suffixIcon: suffix,
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -421,15 +479,20 @@ class _UserFormPageState extends State<UserFormPage> {
             borderSide: BorderSide(color: colorScheme.error, width: 2),
           ),
         ),
-        validator: validatorMessage != null ? (value) {
-          if (value == null || value.isEmpty) {
-            return validatorMessage;
+        validator: (value) {
+          if (validator != null) {
+            return validator(value);
           }
-          if (keyboardType == TextInputType.emailAddress && !value.contains('@')) {
-            return 'Please enter a valid email address';
+          if (validatorMessage != null) {
+            if (value == null || value.isEmpty) {
+              return validatorMessage;
+            }
+            if (keyboardType == TextInputType.emailAddress && !value.contains('@')) {
+              return 'Please enter a valid email address';
+            }
           }
           return null;
-        } : null,
+        },
       ),
     );
   }
