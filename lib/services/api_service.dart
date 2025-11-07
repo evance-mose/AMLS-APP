@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import 'package:amls/models/log_model.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
@@ -44,6 +45,9 @@ class ApiService {
         throw Exception('Assistant request failed: ${response.statusCode}');
       }
     } catch (e) {
+      if (e is SocketException) {
+        throw SocketException('No internet connection');
+      }
       throw Exception('Error contacting assistant: $e');
     }
   }
@@ -70,6 +74,9 @@ class ApiService {
         throw Exception('Failed to fetch suggestions: ${response.statusCode}');
       }
     } catch (e) {
+      if (e is SocketException) {
+        throw SocketException('No internet connection');
+      }
       throw Exception('Error fetching assistant suggestions: $e');
     }
   }

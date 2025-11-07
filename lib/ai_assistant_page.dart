@@ -3,6 +3,7 @@ import 'package:amls/services/api_service.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
 
 class AIAssistantPage extends StatefulWidget {
   const AIAssistantPage({super.key});
@@ -19,6 +20,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
   bool _isLoadingSuggestions = false;
   String? _suggestionsError;
   List<String> _quickActions = [];
+  bool _isOffline = false;
   static const String _historyPrefsKey = 'ai_assistant_history';
 
   @override
@@ -102,19 +104,30 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       setState(() {
         _quickActions = suggestions;
         _isLoadingSuggestions = false;
+        _isOffline = false;
       });
     } catch (e) {
       if (!mounted) return;
+      final bool networkError = _isNetworkError(e);
       setState(() {
-        // Silently ignore errors so the UI hides the suggestions row
-        _suggestionsError = 'error';
+        _suggestionsError = networkError
+            ? 'No internet connection. Suggestions are unavailable.'
+            : 'Unable to load suggestions.';
         _isLoadingSuggestions = false;
+        _isOffline = networkError;
       });
+      if (networkError) {
+        _showNetworkErrorSnack('No internet connection. Some assistant features are offline.');
+      }
     }
   }
 
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
+
+    if (_isOffline) {
+      _showNetworkErrorSnack('You appear to be offline. Trying to send anyway...');
+    }
 
     final userMessage = _messageController.text;
     setState(() {
@@ -144,21 +157,30 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
           ),
         );
         _isTyping = false;
+        _isOffline = false;
       });
       await _saveHistory();
     } catch (e) {
       if (!mounted) return;
+      final bool networkError = _isNetworkError(e);
+      final String errorMessage = networkError
+          ? 'Unable to reach the assistant. Please check your internet connection and try again.'
+          : 'Failed to get assistant response. Please try again later.';
       setState(() {
         _messages.add(
           ChatMessage(
-            text: 'Failed to get assistant response. Please try again.\n\nError: $e',
+            text: errorMessage,
             isUser: false,
             timestamp: DateTime.now(),
           ),
         );
         _isTyping = false;
+        _isOffline = networkError;
       });
       await _saveHistory();
+      if (networkError) {
+        _showNetworkErrorSnack('No internet connection. Messages cannot be delivered right now.');
+      }
     }
     _scrollToBottom();
   }
@@ -175,6 +197,51 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         );
       }
     });
+  }
+
+  bool _isNetworkError(Object e) {
+    return e is SocketException || e.toString().contains('SocketException') || e.toString().contains('No internet connection');
+  }
+
+  void _showNetworkErrorSnack(String message) {
+    if (!mounted) return;
+    final colorScheme = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: colorScheme.error,
+        ),
+      );
+  }
+
+  Widget _buildOfflineBanner(ColorScheme colorScheme, TextTheme textTheme) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.wifi_off, color: colorScheme.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'You are offline. Responses and suggestions will be available once you reconnect.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -209,9 +276,9 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
               ),
             ),
             Text(
-              'Online',
+              _isOffline ? 'Offline' : 'Online',
               style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: _isOffline ? colorScheme.error : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -234,8 +301,7 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
       ),
       body: Column(
         children: [
-          // Quick Action Chips hidden per request
-          const SizedBox.shrink(),
+          if (_isOffline) _buildOfflineBanner(colorScheme, textTheme),
 
           // Chat Messages
           Expanded(
