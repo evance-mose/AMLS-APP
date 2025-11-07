@@ -152,7 +152,7 @@ class ApiService {
       }
 
       final String defaultAction = issue.assignedTo != null
-          ? 'Issue assigned to ${issue.assignedUser?.name ?? 'user #${issue.assignedTo}'}'
+          ? 'fill in action to be taken'
           : 'Issue assignment cleared';
 
       final Map<String, dynamic> newLog = {
