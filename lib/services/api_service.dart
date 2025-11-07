@@ -108,44 +108,80 @@ class ApiService {
     }
   }
 
-  // Create a new log
-static Future<Issue> createLog(Issue log) async {
-  try {
-    // Convert enum values to lowercase strings matching Laravel validation
-    String statusValue = log.status.name.toLowerCase(); // e.g., "pending", "in_progress"
-    String priorityValue = log.priority.name.toLowerCase(); // e.g., "low", "medium", "high"
-    
-    // Handle if your enum uses camelCase (e.g., inProgress -> in_progress)
-    statusValue = statusValue.replaceAllMapped(
-      RegExp(r'([A-Z])'), 
-      (match) => '_${match.group(0)!.toLowerCase()}'
-    );
-    
-    Map<String, dynamic> newLog = {
-      'user_id': log.userId,
-      'issue_id': log.id,
-      'action_taken': '',
-      'status': statusValue,
-      'priority': priorityValue,
-    };
-    
-    final headers = await _getHeaders();
-    
-    final response = await http.post(
-      Uri.parse('${BaseUrl.baseUrl}/logs'),
-      headers: headers,
-      body: json.encode(newLog),
-    );
-    
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      return Issue.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to create log: ${response.statusCode} - ${response.body}');
+  // Create a new log entry tied to an issue (e.g., assignments)
+  static Future<Issue> createLog(Issue issue, {String? actionTaken}) async {
+    try {
+      final currentUser = await AuthService.getUser();
+
+      // Determine which user to attribute the log to
+      final int userId = issue.assignedTo ?? issue.userId ?? currentUser?.id ?? 0;
+      if (userId == 0) {
+        throw Exception('Missing user information for log entry');
+      }
+
+      // Map issue status to supported log status values
+      String statusValue;
+      switch (issue.status) {
+        case IssueStatus.in_progress:
+        case IssueStatus.assigned:
+        case IssueStatus.acknowledged:
+          statusValue = 'in_progress';
+          break;
+        case IssueStatus.resolved:
+          statusValue = 'resolved';
+          break;
+        case IssueStatus.closed:
+          statusValue = 'closed';
+          break;
+        default:
+          statusValue = 'pending';
+      }
+
+      // Map issue priority to log priority values (logs only support low/medium/high)
+      String priorityValue;
+      switch (issue.priority) {
+        case IssuePriority.medium:
+          priorityValue = 'medium';
+          break;
+        case IssuePriority.high:
+        case IssuePriority.critical:
+          priorityValue = 'high';
+          break;
+        default:
+          priorityValue = 'low';
+      }
+
+      final String defaultAction = issue.assignedTo != null
+          ? 'Issue assigned to ${issue.assignedUser?.name ?? 'user #${issue.assignedTo}'}'
+          : 'Issue assignment cleared';
+
+      final Map<String, dynamic> newLog = {
+        'user_id': userId,
+        'issue_id': issue.id,
+        'action_taken': (actionTaken ?? defaultAction).trim(),
+        'status': statusValue,
+        'priority': priorityValue,
+        'category': issue.category.toString().split('.').last,
+        if (issue.assignedTo != null) 'assigned_to': issue.assignedTo,
+      };
+
+      final headers = await _getHeaders();
+
+      final response = await http.post(
+        Uri.parse('${BaseUrl.baseUrl}/logs'),
+        headers: headers,
+        body: json.encode(newLog),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return Issue.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Failed to create log: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error creating log: $e');
     }
-  } catch (e) {
-    throw Exception('Error creating log: $e');
   }
-}
   // Update an existing log
   static Future<Log> updateLog(int id, Log log) async {
     try {
@@ -221,16 +257,24 @@ static Future<Issue> createLog(Issue log) async {
   static Future<Issue> createIssue(Issue issue) async {
     try {
       final headers = await _getHeaders();
+      // Use forApi=true to send only fields backend expects
+      final requestBody = issue.toJson(forApi: true);
+      print('Creating issue with data: $requestBody');
+      
       final response = await http.post(
         Uri.parse('${BaseUrl.baseUrl}/issues'),
         headers: headers,
-        body: json.encode(issue.toJson()),
+        body: json.encode(requestBody),
       );
       
+      print('Create issue response status: ${response.statusCode}');
+      print('Create issue response body: ${response.body}');
+      
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return Issue.fromJson(json.decode(response.body));
+        final responseData = json.decode(response.body);
+        return Issue.fromJson(responseData);
       } else {
-        throw Exception('Failed to create issue: ${response.statusCode}');
+        throw Exception('Failed to create issue: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error creating issue: $e');
@@ -240,18 +284,25 @@ static Future<Issue> createLog(Issue log) async {
   // Update an existing issue
   static Future<Issue> updateIssue(int id, Issue issue) async {
     try {
-      print('Update Issue Response body: ${issue.toJson()}');
       final headers = await _getHeaders();
+      // Use forApi=true to send only fields backend expects
+      final requestBody = issue.toJson(forApi: true);
+      print('Updating issue $id with data: $requestBody');
+      
       final response = await http.put(
         Uri.parse('${BaseUrl.baseUrl}/issues/$id'),
         headers: headers,
-        body: json.encode(issue.toJson()),
+        body: json.encode(requestBody),
       );
       
+      print('Update issue response status: ${response.statusCode}');
+      print('Update issue response body: ${response.body}');
+      
       if (response.statusCode == 200) {
-        return Issue.fromJson(json.decode(response.body));
+        final responseData = json.decode(response.body);
+        return Issue.fromJson(responseData);
       } else {
-        throw Exception('Failed to update issue: ${response.statusCode}');
+        throw Exception('Failed to update issue: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error updating issue: $e');

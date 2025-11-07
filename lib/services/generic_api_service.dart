@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:amls/services/auth_service.dart';
 // ignore: avoid_relative_lib_imports
 import 'package:amls/services/base_url.dart';
+import 'package:amls/models/issue_model.dart';
 
 abstract class ApiModel {
   int get id;
@@ -68,16 +69,29 @@ class GenericApiService<T extends ApiModel> {
   Future<T> create(T item) async {
     try {
       final headers = await _getHeaders();
+      // Handle Issue model specially to use forApi parameter
+      Map<String, dynamic> jsonData;
+      if (item is Issue) {
+        jsonData = (item as Issue).toJson(forApi: true);
+      } else {
+        jsonData = item.toJson();
+      }
+      
+      print('Creating $endpoint with data: $jsonData');
       final response = await http.post(
         Uri.parse('${BaseUrl.baseUrl}/$endpoint'),
         headers: headers,
-        body: json.encode(item.toJson()),
+        body: json.encode(jsonData),
       );
       
+      print('Create $endpoint response status: ${response.statusCode}');
+      print('Create $endpoint response body: ${response.body}');
+      
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return fromJson(json.decode(response.body));
+        final responseData = json.decode(response.body);
+        return fromJson(responseData);
       } else {
-        throw Exception('Failed to create $endpoint: ${response.statusCode}');
+        throw Exception('Failed to create $endpoint: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error creating $endpoint: $e');
@@ -88,16 +102,29 @@ class GenericApiService<T extends ApiModel> {
   Future<T> update(int id, T item) async {
     try {
       final headers = await _getHeaders();
+      // Handle Issue model specially to use forApi parameter
+      Map<String, dynamic> jsonData;
+      if (item is Issue) {
+        jsonData = (item as Issue).toJson(forApi: true);
+      } else {
+        jsonData = item.toJson();
+      }
+      
+      print('Updating $endpoint $id with data: $jsonData');
       final response = await http.put(
         Uri.parse('${BaseUrl.baseUrl}/$endpoint/$id'),
         headers: headers,
-        body: json.encode(item.toJson()),
+        body: json.encode(jsonData),
       );
       
+      print('Update $endpoint response status: ${response.statusCode}');
+      print('Update $endpoint response body: ${response.body}');
+      
       if (response.statusCode == 200) {
-        return fromJson(json.decode(response.body));
+        final responseData = json.decode(response.body);
+        return fromJson(responseData);
       } else {
-        throw Exception('Failed to update $endpoint: ${response.statusCode}');
+        throw Exception('Failed to update $endpoint: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Error updating $endpoint: $e');

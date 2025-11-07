@@ -49,43 +49,101 @@ class Issue implements ApiModel {
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
+    // Handle nested issue structure (when response contains issue inside log or other structure)
+    Map<String, dynamic> issueData = json;
+    if (json.containsKey('issue') && json['issue'] is Map<String, dynamic>) {
+      issueData = json['issue'] as Map<String, dynamic>;
+    }
+    
     return Issue(
-      id: json['id'] as int? ?? 0,
-      userId: json['user_id'] as int?,
-      assignedTo: json['assigned_to'] as int?,
-      location: json['location'] as String? ?? 'Unknown Location',
-      atmId: json['atm_id'] as String? ?? 'Unknown ATM',
+      id: issueData['id'] as int? ?? 0,
+      userId: issueData['user_id'] as int?,
+      assignedTo: issueData['assigned_to'] as int?,
+      location: issueData['location'] as String? ?? 'Unknown Location',
+      atmId: issueData['atm_id'] as String? ?? 'Unknown ATM',
       category: IssueCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == (json['category'] as String? ?? 'other'),
+        (e) => e.toString().split('.').last == (issueData['category'] as String? ?? 'other'),
         orElse: () => IssueCategory.other,
       ),
-      description: json['description'] as String?,
+      description: issueData['description'] as String?,
       status: IssueStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == (json['status'] as String? ?? 'pending'),
+        (e) => e.toString().split('.').last == (issueData['status'] as String? ?? 'pending'),
         orElse: () => IssueStatus.pending,
       ),
       priority: IssuePriority.values.firstWhere(
-        (e) => e.toString().split('.').last == (json['priority'] as String? ?? 'low'),
+        (e) => e.toString().split('.').last == (issueData['priority'] as String? ?? 'low'),
         orElse: () => IssuePriority.low,
       ),
-      reportedDate: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'] as String)
+      reportedDate: issueData['created_at'] != null 
+          ? DateTime.parse(issueData['created_at'] as String)
           : DateTime.now(),
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'] as String)
+      createdAt: issueData['created_at'] != null 
+          ? DateTime.parse(issueData['created_at'] as String)
           : DateTime.now(),
-      updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at'] as String)
+      updatedAt: issueData['updated_at'] != null 
+          ? DateTime.parse(issueData['updated_at'] as String)
           : DateTime.now(),
-      user: json['user'] != null ? User.fromJson(json['user']) : null,
-      assignedUser: json['assigned_user'] != null ? User.fromJson(json['assigned_user']) : null,
+      user: issueData['user'] != null ? User.fromJson(issueData['user']) : null,
+      assignedUser: issueData['assigned_user'] != null ? User.fromJson(issueData['assigned_user']) : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool forApi = false}) {
+    // When sending to API, only send fields that backend expects
+    if (forApi) {
+      // Backend validation expects ONLY these fields:
+      // 'location' => 'required|string|max:255'
+      // 'atm_id' => 'required|string|max:255'
+      // 'category' => 'required|in:dispenser_errors,card_reader_errors,receipt_printer_errors,epp_errors,pc_core_errors,journal_printer_errors,recycling_module_errors,other'
+      // 'description' => 'nullable|string'
+      // 'status' => 'required|in:pending,in_progress,resolved,closed'
+      // 'priority' => 'required|in:low,medium,high'
+      // 'assigned_to' => 'nullable|exists:users,id'
+      
+      // Map status to backend-accepted values (pending, in_progress, resolved, closed)
+      String statusValue = status.toString().split('.').last;
+      // Convert frontend statuses to backend-accepted ones
+      if (statusValue == 'open' || statusValue == 'assigned' || statusValue == 'acknowledged') {
+        statusValue = 'pending'; // Default to pending for unsupported statuses
+      }
+      // Ensure status is one of the valid values
+      if (!['pending', 'in_progress', 'resolved', 'closed'].contains(statusValue)) {
+        statusValue = 'pending';
+      }
+      
+      // Map priority to backend-accepted values (low, medium, high)
+      String priorityValue = priority.toString().split('.').last;
+      if (priorityValue == 'critical') {
+        priorityValue = 'high'; // Map critical to high
+      }
+      // Ensure priority is one of the valid values
+      if (!['low', 'medium', 'high'].contains(priorityValue)) {
+        priorityValue = 'low';
+      }
+      
+      // Build the payload with ONLY the required fields
+      final Map<String, dynamic> payload = {
+        'location': location,
+        'atm_id': atmId,
+        'category': category.toString().split('.').last,
+        'status': statusValue,
+        'priority': priorityValue,
+      };
+      
+      // Add nullable fields only if they have values
+      if (description != null && description!.isNotEmpty) {
+        payload['description'] = description;
+      }
+      
+      if (assignedTo != null) {
+        payload['assigned_to'] = assignedTo;
+      }
+      
+      return payload;
+    }
+    
+    // Full JSON for internal use
     return {
-      'id': id,
-      'user_id': userId,
       'assigned_to': assignedTo,
       'location': location,
       'atm_id': atmId,
@@ -93,11 +151,6 @@ class Issue implements ApiModel {
       'description': description,
       'status': status.toString().split('.').last,
       'priority': priority.toString().split('.').last,
-      'reported_date': reportedDate.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      'user': user?.toJson(),
-      'assigned_user': assignedUser?.toJson(),
     };
   }
 

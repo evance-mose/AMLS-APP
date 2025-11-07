@@ -21,11 +21,11 @@ class IssueCubit extends Cubit<IssueState> {
     }
   }
 
- void addLog(Issue log) async {
+ void addLog(Issue log, {String? actionTaken}) async {
     emit(IssueLoading());
     
     try {
-      await ApiService.createLog(log);
+      await ApiService.createLog(log, actionTaken: actionTaken);
       // Refresh the logs list after successful creation
       fetchIssues();
     } catch (e) {
