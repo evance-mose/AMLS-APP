@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:amls/models/issue_model.dart'; // Import the Issue model
 import 'package:amls/models/user_model.dart';
 import 'package:amls/services/api_service.dart';
+import 'package:amls/services/auth_service.dart';
 
 extension StringExtension on String {
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
@@ -29,6 +30,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
   late int? _selectedAssignedUserId;
   List<User> _availableUsers = [];
   bool _isLoadingUsers = true;
+  bool _canAssignIssue = false;
 
   final List<String> _priorities = IssuePriority.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
   final List<String> _statuses = IssueStatus.values.map((e) => e.toString().split('.').last.toCapitalized()).toList();
@@ -47,6 +49,25 @@ class _IssueFormPageState extends State<IssueFormPage> {
     _selectedAssignedUserId = widget.issue?.assignedTo; // Initialize selected user ID
     
     _fetchUsers();
+    _loadCurrentUserPermissions();
+  }
+
+  void _loadCurrentUserPermissions() async {
+    try {
+      final user = await AuthService.getUser();
+      if (mounted) {
+        setState(() {
+          _canAssignIssue = user?.role == UserRole.admin;
+        });
+      }
+    } catch (e) {
+      print('Error loading current user: $e');
+      if (mounted) {
+        setState(() {
+          _canAssignIssue = false;
+        });
+      }
+    }
   }
 
   @override
@@ -204,6 +225,16 @@ class _IssueFormPageState extends State<IssueFormPage> {
   }
 
   void _showAssignIssueSheet() {
+    if (!_canAssignIssue) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You do not have permission to assign issues.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     if (_isLoadingUsers) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -346,7 +377,7 @@ class _IssueFormPageState extends State<IssueFormPage> {
         ),
         actions: widget.isViewOnly
             ? [
-                if (widget.issue != null)
+                if (widget.issue != null && _canAssignIssue)
                   IconButton(
                     icon: Container(
                       padding: const EdgeInsets.all(8),
