@@ -9,8 +9,9 @@ class LogLoading extends LogState {}
 
 class LogLoaded extends LogState {
   final List<Log> logs;
+  final bool fromCache;
 
-  LogLoaded(this.logs);
+  LogLoaded(this.logs, {this.fromCache = false});
 }
 
 class LogError extends LogState {

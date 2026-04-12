@@ -1,3 +1,4 @@
+import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/models/issue_model.dart'; // Import the Issue model
 import 'package:amls/models/user_model.dart';
@@ -377,49 +378,64 @@ class _IssueFormPageState extends State<IssueFormPage> {
         ),
         actions: widget.isViewOnly
             ? [
-                if (widget.issue != null && _canAssignIssue)
-                  IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.assignment_ind_outlined, color: colorScheme.primary, size: 20),
-                    ),
-                    onPressed: _showAssignIssueSheet,
-                    tooltip: 'Assign Issue',
-                  ),
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
-                  ),
-                  onPressed: () async {
-                    final updatedIssue = await Navigator.of(context).push<Issue?>(
-                      MaterialPageRoute(
-                        builder: (context) => IssueFormPage(issue: widget.issue, isViewOnly: false),
-                      ),
-                    );
-                    if (updatedIssue != null && mounted) {
-                      Navigator.of(context).pop(updatedIssue);
+                AppBarSettingsMenu(
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'assign':
+                        _showAssignIssueSheet();
+                        break;
+                      case 'edit':
+                        final updatedIssue = await Navigator.of(context).push<Issue?>(
+                          MaterialPageRoute(
+                            builder: (context) => IssueFormPage(issue: widget.issue, isViewOnly: false),
+                          ),
+                        );
+                        if (updatedIssue != null && mounted) {
+                          Navigator.of(context).pop(updatedIssue);
+                        }
+                        break;
+                      case 'delete':
+                        _confirmDelete();
+                        break;
                     }
                   },
-                ),
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
-                  ),
-                  onPressed: _confirmDelete,
+                  itemBuilder: (ctx) {
+                    final tt = Theme.of(ctx).textTheme;
+                    final cs = Theme.of(ctx).colorScheme;
+                    return [
+                      if (widget.issue != null && _canAssignIssue)
+                        PopupMenuItem<String>(
+                          value: 'assign',
+                          child: Row(
+                            children: [
+                              Icon(Icons.assignment_ind_outlined, size: 20, color: cs.primary),
+                              const SizedBox(width: 12),
+                              Text('Assign issue', style: tt.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20, color: cs.primary),
+                            const SizedBox(width: 12),
+                            Text('Edit', style: tt.bodyMedium),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: cs.error),
+                            const SizedBox(width: 12),
+                            Text('Delete', style: tt.bodyMedium?.copyWith(color: cs.error)),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
                 ),
                 const SizedBox(width: 8),
               ]

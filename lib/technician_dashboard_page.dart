@@ -2,7 +2,15 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:amls/cubits/logs/log_cubit.dart';
+import 'package:amls/database/sync_queue.dart';
+import 'package:amls/models/issue_model.dart';
+import 'package:amls/models/log_model.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/widgets/app_bar_settings_menu.dart';
+import 'package:amls/widgets/dashboard_connectivity_chip.dart';
+import 'package:amls/utils/chart_buckets.dart';
+import 'package:amls/widgets/dashboard_highlight_stat_card.dart';
+import 'package:amls/widgets/dashboard_weekly_overview_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -14,11 +22,33 @@ class TechnicianDashboardPage extends StatefulWidget {
 }
 
 class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
+  int _pendingSyncCount = 0;
+
+  Future<void> _reloadPendingCount() async {
+    final n = await SyncQueue.pendingCount();
+    if (mounted) setState(() => _pendingSyncCount = n);
+  }
+
+  Future<void> _syncNow() async {
+    await Future.wait([
+      context.read<IssueCubit>().fetchIssues(),
+      context.read<LogCubit>().fetchLogs(),
+    ]);
+    if (!mounted) return;
+    await _reloadPendingCount();
+    if (!mounted) return;
+    final msg = _pendingSyncCount > 0
+        ? '$_pendingSyncCount change${_pendingSyncCount == 1 ? '' : 's'} waiting to sync when online.'
+        : 'Data refreshed.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   @override
   void initState() {
     super.initState();
     context.read<IssueCubit>().fetchIssues();
     context.read<LogCubit>().fetchLogs();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reloadPendingCount());
   }
 
   @override
@@ -36,6 +66,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
         ),
       );
     }
+
+    final user = authState.user;
+    final roleSubtitle = user != null
+        ? 'Logged in as ${user.role.displayLabel}'
+        : 'Logged in';
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -56,52 +91,61 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Text(
+                  roleSubtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: colorScheme.onSurface),
-            onPressed: () {
-              context.read<IssueCubit>().fetchIssues();
-              context.read<LogCubit>().fetchLogs();
-            },
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onSelected: (value) {
-              if (value == 'logout') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthCubit>().logout();
-                        },
-                        child: Text('Logout', style: TextStyle(color: colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
+          AppBarSettingsMenu(
+            onSelected: (value) async {
+              switch (value) {
+                case 'connection':
+                  showDashboardConnectionDialog(context);
+                  break;
+                case 'sync':
+                  await _syncNow();
+                  break;
+                case 'logout':
+                  await showSignOutConfirmDialog(context);
+                  break;
               }
             },
-            itemBuilder: (context) => [
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'connection',
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Connection status', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'sync',
+                child: Row(
+                  children: [
+                    Icon(Icons.sync, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Sync data', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20, color: colorScheme.onSurface),
+                    Icon(Icons.logout, size: 20, color: colorScheme.error),
                     const SizedBox(width: 12),
-                    Text('Logout', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                    Text('Sign out', style: textTheme.bodyMedium?.copyWith(color: colorScheme.error)),
                   ],
                 ),
               ),
@@ -114,19 +158,57 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
         builder: (context, issueState) {
           return BlocBuilder<LogCubit, LogState>(
             builder: (context, logState) {
-              if (issueState is IssueLoading || logState is LogLoading) {
+              if (issueState is IssueError && logState is LogError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 56, color: colorScheme.outline),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Could not load dashboard',
+                          style: textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${issueState.message}\n${logState.message}',
+                          style: textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: () {
+                            context.read<IssueCubit>().fetchIssues();
+                            context.read<LogCubit>().fetchLogs();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final List<Issue> issues =
+                  issueState is IssueLoaded ? issueState.issues : <Issue>[];
+              final List<Log> logs = logState is LogLoaded ? logState.logs : <Log>[];
+
+              final issuesWaiting =
+                  issueState is IssueLoading || issueState is IssueInitial;
+              final logsWaiting = logState is LogLoading || logState is LogInitial;
+              final showGlobalLoader =
+                  issues.isEmpty && logs.isEmpty && issuesWaiting && logsWaiting;
+
+              if (showGlobalLoader) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              List<dynamic> issues = [];
-              List<dynamic> logs = [];
-
-              if (issueState is IssueLoaded) {
-                issues = issueState.issues;
-              }
-              if (logState is LogLoaded) {
-                logs = logState.logs;
-              }
+              final showOfflineBanner = (issueState is IssueLoaded && issueState.fromCache) ||
+                  (logState is LogLoaded && logState.fromCache);
 
               final user = (authState as AuthAuthenticated).user;
 
@@ -150,29 +232,96 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  context.read<IssueCubit>().fetchIssues();
-                  context.read<LogCubit>().fetchLogs();
+                  await Future.wait([
+                    context.read<IssueCubit>().fetchIssues(),
+                    context.read<LogCubit>().fetchLogs(),
+                  ]);
+                  await _reloadPendingCount();
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildWelcomeCard(context, user),
-                        const SizedBox(height: 24),
+                        if (showOfflineBanner || _pendingSyncCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Material(
+                              color: colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (showOfflineBanner)
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.storage_outlined,
+                                              color: colorScheme.onSecondaryContainer, size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              'Showing saved data on this device. Use Sync or pull down to refresh when the network is available.',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSecondaryContainer,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (_pendingSyncCount > 0) ...[
+                                      if (showOfflineBanner) const SizedBox(height: 10),
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.cloud_upload_outlined,
+                                              color: colorScheme.onSecondaryContainer, size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              '$_pendingSyncCount update${_pendingSyncCount == 1 ? '' : 's'} queued — open Settings → Sync data when you are online.',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSecondaryContainer,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        DashboardWeeklyOverviewCard(
+                          issuesByDay: bucketIssuesByDayLast7(issues),
+                          logsByDay: bucketLogsByDayLast7(logs),
+                        ),
+                        const SizedBox(height: 20),
                         _buildStatsCards(context, assignedIssues, myLogs),
                         const SizedBox(height: 32),
-                        Text(
-                          'Quick Check',
-                          style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Quick Check',
+                                style: textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTechnicianActionCards(context),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        _buildTechnicianActionCards(context),
                         const SizedBox(height: 80),
                       ],
                     ),
@@ -196,65 +345,7 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context, User? user) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withOpacity(0.1),
-            colorScheme.secondary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.person_outline, color: colorScheme.primary, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${user?.name ?? 'Technician'}!',
-                  style: textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Resolve tasks and update maintenance logs',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatsCards(BuildContext context, List<dynamic> assignedIssues, List<dynamic> myLogs) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     final pendingIssues = assignedIssues.where((issue) {
       try {
         return issue.status.toString().contains('open') || issue.status.toString().contains('acknowledged');
@@ -271,108 +362,47 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
       }
     }).length;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Assigned Tasks',
-                assignedIssues.length.toString(),
-                Icons.assignment,
-                Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Pending',
-                pendingIssues.toString(),
-                Icons.pending,
-                Colors.orange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Completed',
-                completedLogs.toString(),
-                Icons.check_circle,
-                Colors.green,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Logs',
-                myLogs.length.toString(),
-                Icons.list_alt,
-                Colors.purple,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return DashboardHighlightsPanel(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Container(
-          //   padding: const EdgeInsets.all(10),
-          //   decoration: BoxDecoration(
-          //     color: color.withOpacity(0.1),
-          //     borderRadius: BorderRadius.circular(10),
-          //   ),
-          //   child: Icon(icon, color: color, size: 24),
-          // ),
-          // const SizedBox(height: 16),
-          Text(
-            value,
-            style: textTheme.headlineMedium?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: assignedIssues.length.toString(),
+                  label: 'Assigned tasks',
+                  footer: 'Issues assigned to you',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: pendingIssues.toString(),
+                  label: 'Pending',
+                  footer: 'Open or acknowledged',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: completedLogs.toString(),
+                  label: 'Completed',
+                  footer: 'Your finished logs',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: myLogs.length.toString(),
+                  label: 'Total logs',
+                  footer: 'All logs you created',
+                ),
+              ),
+            ],
           ),
         ],
       ),

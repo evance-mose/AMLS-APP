@@ -3,6 +3,15 @@ import 'package:flutter/foundation.dart';
 enum UserRole { admin, technician, custodian }
 enum UserStatus { active, inactive }
 
+extension UserRoleDisplay on UserRole {
+  /// e.g. [UserRole.technician] → "Technician".
+  String get displayLabel {
+    final n = name;
+    if (n.isEmpty) return n;
+    return '${n[0].toUpperCase()}${n.substring(1)}';
+  }
+}
+
 class User {
   final int id;
   final String name;

@@ -1,6 +1,9 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/home/home_cubit.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/widgets/app_bar_settings_menu.dart';
+import 'package:amls/widgets/dashboard_highlight_stat_card.dart';
+import 'package:amls/widgets/dashboard_weekly_overview_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -36,6 +39,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       );
     }
 
+    final user = authState.user;
+    final roleSubtitle = user != null
+        ? 'Logged in as ${user.role.displayLabel}'
+        : 'Logged in';
+
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
@@ -68,7 +76,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     maxLines: 1,
                   ),
                   Text(
-                    'Admin Dashboard',
+                    roleSubtitle,
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -81,46 +89,32 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: colorScheme.onSurface),
-            onPressed: () {
-              context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
-            },
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
+          AppBarSettingsMenu(
             onSelected: (value) {
-              if (value == 'logout') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthCubit>().logout();
-                        },
-                        child: Text('Logout', style: TextStyle(color: colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
+              if (value == 'refresh') {
+                context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
+              } else if (value == 'logout') {
+                showSignOutConfirmDialog(context);
               }
             },
-            itemBuilder: (context) => [
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Refresh dashboard', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20, color: colorScheme.onSurface),
+                    Icon(Icons.logout, size: 20, color: colorScheme.error),
                     const SizedBox(width: 12),
-                    Text('Logout', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                    Text('Sign out', style: textTheme.bodyMedium?.copyWith(color: colorScheme.error)),
                   ],
                 ),
               ),
@@ -183,7 +177,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -193,17 +187,30 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         _buildMonthlyReportHeader(context, state.monthlyReport!),
                         const SizedBox(height: 24),
                       ],
+                      DashboardWeeklyOverviewCard(
+                        issuesByDay: state.issuesPerDayLast7,
+                        logsByDay: state.logsPerDayLast7,
+                      ),
+                      const SizedBox(height: 20),
                       _buildKPIGrid(context, state),
                       const SizedBox(height: 32),
-                      Text(
-                        'Admin Actions',
-                        style: textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Admin Actions',
+                              style: textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildAdminActionCards(context),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      _buildAdminActionCards(context),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -246,7 +253,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             decoration: InputDecoration(
               labelText: 'Month',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             ),
             items: List.generate(12, (i) => i + 1).map((m) {
               return DropdownMenuItem(value: m, child: Text(months[m - 1]));
@@ -266,7 +273,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             decoration: InputDecoration(
               labelText: 'Year',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             ),
             items: years.map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
             onChanged: (value) {
@@ -286,7 +293,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final textTheme = Theme.of(context).textTheme;
     final reportInfo = monthlyReport.reportInfo;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -295,7 +302,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Row(
         children: [
           Icon(Icons.summarize, color: colorScheme.primary, size: 32),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,137 +328,67 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildKPIGrid(BuildContext context, dynamic state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Logs',
-                '${state.totalLogs}',
-                Icons.list_alt,
-                Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Issues',
-                '${state.totalIssues}',
-                Icons.warning_amber_outlined,
-                Colors.orange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Open Issues',
-                '${state.openIssues}',
-                Icons.info_outlined,
-                Colors.red,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Critical',
-                '${state.criticalIssues}',
-                Icons.priority_high,
-                Colors.deepOrange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Resolution Rate',
-                '${state.resolutionRate.toStringAsFixed(1)}%',
-                Icons.trending_up,
-                Colors.green,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Avg Resolution (hrs)',
-                state.avgResolutionTime.toStringAsFixed(1),
-                Icons.schedule,
-                Colors.teal,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return DashboardHighlightsPanel(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.totalLogs}',
+                  label: 'Total logs',
+                  footer: 'Maintenance records this month',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.totalIssues}',
+                  label: 'Total issues',
+                  footer: 'All priorities combined',
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.openIssues}',
+                  label: 'Open issues',
+                  footer: 'Still active in period',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.criticalIssues}',
+                  label: 'Critical',
+                  footer: 'Highest severity count',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.resolutionRate.toStringAsFixed(1)}%',
+                  label: 'Resolution rate',
+                  footer: 'Share of issues closed',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: state.avgResolutionTime.toStringAsFixed(1),
+                  label: 'Avg resolution (hrs)',
+                  footer: 'Mean time to close',
+                ),
+              ),
+            ],
           ),
         ],
       ),

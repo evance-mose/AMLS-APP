@@ -9,8 +9,9 @@ class IssueLoading extends IssueState {}
 
 class IssueLoaded extends IssueState {
   final List<Issue> issues;
+  final bool fromCache;
 
-  IssueLoaded(this.issues);
+  IssueLoaded(this.issues, {this.fromCache = false});
 }
 
 class IssueError extends IssueState {

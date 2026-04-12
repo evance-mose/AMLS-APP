@@ -22,6 +22,12 @@ class HomeLoaded extends HomeState {
   final List<Issue> recentIssues;
   final MonthlyReport? monthlyReport;
 
+  /// Counts of new issues per calendar day for the last 7 days (oldest → newest).
+  final List<double> issuesPerDayLast7;
+
+  /// Counts of new logs per calendar day for the last 7 days (oldest → newest).
+  final List<double> logsPerDayLast7;
+
   HomeLoaded({
     required this.totalLogs,
     required this.totalIssues,
@@ -35,6 +41,8 @@ class HomeLoaded extends HomeState {
     required this.avgResolutionTime,
     required this.recentLogs,
     required this.recentIssues,
+    required this.issuesPerDayLast7,
+    required this.logsPerDayLast7,
     this.monthlyReport,
   });
 }

@@ -1,71 +1,128 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:amls/database/local_cache.dart';
+import 'package:amls/database/storage_json.dart';
+import 'package:amls/database/sync_queue.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/services/api_instances.dart';
 import 'package:amls/services/api_service.dart';
+import 'package:amls/services/sync_service.dart';
 
 part 'issue_state.dart';
 
 class IssueCubit extends Cubit<IssueState> {
   IssueCubit() : super(IssueInitial());
 
-
-  void fetchIssues() async {
-    emit(IssueLoading());
-    
+  Future<void> fetchIssues() async {
+    final cached = await LocalCache.getIssues();
+    if (cached.isNotEmpty) {
+      emit(IssueLoaded(cached, fromCache: true));
+    } else {
+      emit(IssueLoading());
+    }
     try {
-      final issues = await ApiInstances.issueApi.fetchAll();
-      emit(IssueLoaded(issues));
+      var fresh = await ApiInstances.issueApi.fetchAll();
+      await LocalCache.replaceIssues(fresh);
+      final processed = await SyncService.processPendingQueue();
+      if (processed > 0) {
+        fresh = await ApiInstances.issueApi.fetchAll();
+        await LocalCache.replaceIssues(fresh);
+      }
+      emit(IssueLoaded(fresh, fromCache: false));
     } catch (e) {
-      emit(IssueError('Error fetching issues: $e'));
+      if (cached.isEmpty) {
+        emit(IssueError('Error fetching issues: $e'));
+      } else {
+        emit(IssueLoaded(cached, fromCache: true));
+      }
     }
   }
 
- void addLog(Issue log, {String? actionTaken}) async {
+  Future<void> addLog(Issue log, {String? actionTaken}) async {
     emit(IssueLoading());
-    
     try {
       await ApiService.createLog(log, actionTaken: actionTaken);
-      // Refresh the logs list after successful creation
-      fetchIssues();
+      await fetchIssues();
     } catch (e) {
-     
-      emit(IssueError('Error Assigning issue: $e'));
+      if (SyncService.looksLikeNetworkError(e)) {
+        await SyncQueue.enqueue(
+          entity: kSyncEntityIssueLog,
+          operation: kSyncOpCreate,
+          payloadJson: encodePayload({
+            'issue': issueToStorageJson(log),
+            'action_taken': actionTaken,
+          }),
+        );
+        final cached = await LocalCache.getIssues();
+        emit(IssueLoaded(cached, fromCache: true));
+      } else {
+        emit(IssueError('Error Assigning issue: $e'));
+      }
     }
   }
-  void addIssue(Issue issue) async {
+
+  Future<void> addIssue(Issue issue) async {
     emit(IssueLoading());
-    
     try {
       await ApiInstances.issueApi.create(issue);
-      // Refresh the issues list after successful creation
-      fetchIssues();
+      await fetchIssues();
     } catch (e) {
-      emit(IssueError('Error adding issue: $e'));
+      if (SyncService.looksLikeNetworkError(e)) {
+        await SyncQueue.enqueue(
+          entity: kSyncEntityIssue,
+          operation: kSyncOpCreate,
+          payloadJson: encodePayload(issueToStorageJson(issue)),
+        );
+        final cached = await LocalCache.getIssues();
+        emit(IssueLoaded(cached, fromCache: true));
+      } else {
+        emit(IssueError('Error adding issue: $e'));
+      }
     }
   }
 
-  void updateIssue(Issue oldIssue, Issue newIssue) async {
+  Future<void> updateIssue(Issue oldIssue, Issue newIssue) async {
     emit(IssueLoading());
-    
     try {
       await ApiInstances.issueApi.update(oldIssue.id, newIssue);
-      // Refresh the issues list after successful update
-      fetchIssues();
+      await fetchIssues();
     } catch (e) {
-      emit(IssueError('Error updating issue: $e'));
+      if (SyncService.looksLikeNetworkError(e)) {
+        await SyncQueue.enqueue(
+          entity: kSyncEntityIssue,
+          operation: kSyncOpUpdate,
+          payloadJson: encodePayload({
+            'server_id': oldIssue.id,
+            'issue': issueToStorageJson(newIssue),
+          }),
+          serverId: oldIssue.id,
+        );
+        final cached = await LocalCache.getIssues();
+        emit(IssueLoaded(cached, fromCache: true));
+      } else {
+        emit(IssueError('Error updating issue: $e'));
+      }
     }
   }
 
-  void deleteIssue(Issue issue) async {
+  Future<void> deleteIssue(Issue issue) async {
     emit(IssueLoading());
-    
     try {
       await ApiInstances.issueApi.delete(issue.id);
-      // Refresh the issues list after successful deletion
-      fetchIssues();
+      await fetchIssues();
     } catch (e) {
-      emit(IssueError('Error deleting issue: $e'));
+      if (SyncService.looksLikeNetworkError(e)) {
+        await SyncQueue.enqueue(
+          entity: kSyncEntityIssue,
+          operation: kSyncOpDelete,
+          payloadJson: encodePayload({'server_id': issue.id}),
+          serverId: issue.id,
+        );
+        final cached = await LocalCache.getIssues();
+        emit(IssueLoaded(cached, fromCache: true));
+      } else {
+        emit(IssueError('Error deleting issue: $e'));
+      }
     }
   }
 }
