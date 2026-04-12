@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:amls/database/local_db.dart';
 import 'cubits/auth/auth_cubit.dart';
 import 'cubits/home/home_cubit.dart';
 import 'cubits/issues/issue_cubit.dart';
@@ -16,6 +17,7 @@ import 'users_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await LocalDb.instance();
   runApp(const MyApp());
 }
 

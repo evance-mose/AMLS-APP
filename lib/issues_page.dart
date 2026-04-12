@@ -18,7 +18,9 @@ class _IssuesScreenState extends State<IssuesScreen> {
 
   // This getter should now work directly with Issue objects from the cubit state
   List<Issue> get filteredIssues {
-    final currentIssues = (context.read<IssueCubit>().state as IssueLoaded).issues;
+    final state = context.read<IssueCubit>().state;
+    if (state is! IssueLoaded) return [];
+    final currentIssues = state.issues;
     if (selectedFilter == 'All') {
       return currentIssues;
     }

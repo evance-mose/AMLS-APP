@@ -2,7 +2,11 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:amls/cubits/logs/log_cubit.dart';
+import 'package:amls/database/sync_queue.dart';
+import 'package:amls/models/issue_model.dart';
+import 'package:amls/models/log_model.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/widgets/dashboard_connectivity_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -14,11 +18,33 @@ class TechnicianDashboardPage extends StatefulWidget {
 }
 
 class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
+  int _pendingSyncCount = 0;
+
+  Future<void> _reloadPendingCount() async {
+    final n = await SyncQueue.pendingCount();
+    if (mounted) setState(() => _pendingSyncCount = n);
+  }
+
+  Future<void> _syncNow() async {
+    await Future.wait([
+      context.read<IssueCubit>().fetchIssues(),
+      context.read<LogCubit>().fetchLogs(),
+    ]);
+    if (!mounted) return;
+    await _reloadPendingCount();
+    if (!mounted) return;
+    final msg = _pendingSyncCount > 0
+        ? '$_pendingSyncCount change${_pendingSyncCount == 1 ? '' : 's'} waiting to sync when online.'
+        : 'Data refreshed.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   @override
   void initState() {
     super.initState();
     context.read<IssueCubit>().fetchIssues();
     context.read<LogCubit>().fetchLogs();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reloadPendingCount());
   }
 
   @override
@@ -61,12 +87,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
           ],
         ),
         actions: [
+          const DashboardConnectivityChip(),
           IconButton(
-            icon: Icon(Icons.refresh, color: colorScheme.onSurface),
-            onPressed: () {
-              context.read<IssueCubit>().fetchIssues();
-              context.read<LogCubit>().fetchLogs();
-            },
+            tooltip: 'Sync now',
+            icon: Icon(Icons.sync, color: colorScheme.onSurface),
+            onPressed: _syncNow,
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
@@ -114,19 +139,57 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
         builder: (context, issueState) {
           return BlocBuilder<LogCubit, LogState>(
             builder: (context, logState) {
-              if (issueState is IssueLoading || logState is LogLoading) {
+              if (issueState is IssueError && logState is LogError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 56, color: colorScheme.outline),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Could not load dashboard',
+                          style: textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${issueState.message}\n${logState.message}',
+                          style: textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: () {
+                            context.read<IssueCubit>().fetchIssues();
+                            context.read<LogCubit>().fetchLogs();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final List<Issue> issues =
+                  issueState is IssueLoaded ? issueState.issues : <Issue>[];
+              final List<Log> logs = logState is LogLoaded ? logState.logs : <Log>[];
+
+              final issuesWaiting =
+                  issueState is IssueLoading || issueState is IssueInitial;
+              final logsWaiting = logState is LogLoading || logState is LogInitial;
+              final showGlobalLoader =
+                  issues.isEmpty && logs.isEmpty && issuesWaiting && logsWaiting;
+
+              if (showGlobalLoader) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              List<dynamic> issues = [];
-              List<dynamic> logs = [];
-
-              if (issueState is IssueLoaded) {
-                issues = issueState.issues;
-              }
-              if (logState is LogLoaded) {
-                logs = logState.logs;
-              }
+              final showOfflineBanner = (issueState is IssueLoaded && issueState.fromCache) ||
+                  (logState is LogLoaded && logState.fromCache);
 
               final user = (authState as AuthAuthenticated).user;
 
@@ -150,8 +213,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  context.read<IssueCubit>().fetchIssues();
-                  context.read<LogCubit>().fetchLogs();
+                  await Future.wait([
+                    context.read<IssueCubit>().fetchIssues(),
+                    context.read<LogCubit>().fetchLogs(),
+                  ]);
+                  await _reloadPendingCount();
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -160,6 +226,59 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (showOfflineBanner || _pendingSyncCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Material(
+                              color: colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (showOfflineBanner)
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.storage_outlined,
+                                              color: colorScheme.onSecondaryContainer, size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              'Showing saved data on this device. Use Sync or pull down to refresh when the network is available.',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSecondaryContainer,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (_pendingSyncCount > 0) ...[
+                                      if (showOfflineBanner) const SizedBox(height: 10),
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.cloud_upload_outlined,
+                                              color: colorScheme.onSecondaryContainer, size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              '$_pendingSyncCount update${_pendingSyncCount == 1 ? '' : 's'} queued — tap Sync when you are online.',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSecondaryContainer,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         _buildWelcomeCard(context, user),
                         const SizedBox(height: 24),
                         _buildStatsCards(context, assignedIssues, myLogs),
