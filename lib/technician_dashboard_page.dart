@@ -8,6 +8,9 @@ import 'package:amls/models/log_model.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:amls/widgets/dashboard_connectivity_chip.dart';
+import 'package:amls/utils/chart_buckets.dart';
+import 'package:amls/widgets/dashboard_highlight_stat_card.dart';
+import 'package:amls/widgets/dashboard_weekly_overview_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -225,7 +228,7 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -236,7 +239,7 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                               color: colorScheme.secondaryContainer,
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -282,19 +285,30 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                               ),
                             ),
                           ),
-                        _buildWelcomeCard(context, user),
-                        const SizedBox(height: 24),
+                        DashboardWeeklyOverviewCard(
+                          issuesByDay: bucketIssuesByDayLast7(issues),
+                          logsByDay: bucketLogsByDayLast7(logs),
+                        ),
+                        const SizedBox(height: 20),
                         _buildStatsCards(context, assignedIssues, myLogs),
                         const SizedBox(height: 32),
-                        Text(
-                          'Quick Check',
-                          style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Quick Check',
+                                style: textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTechnicianActionCards(context),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        _buildTechnicianActionCards(context),
                         const SizedBox(height: 80),
                       ],
                     ),
@@ -318,65 +332,7 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context, User? user) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withOpacity(0.1),
-            colorScheme.secondary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.person_outline, color: colorScheme.primary, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${user?.name ?? 'Technician'}!',
-                  style: textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Resolve tasks and update maintenance logs',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatsCards(BuildContext context, List<dynamic> assignedIssues, List<dynamic> myLogs) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     final pendingIssues = assignedIssues.where((issue) {
       try {
         return issue.status.toString().contains('open') || issue.status.toString().contains('acknowledged');
@@ -393,78 +349,47 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
       }
     }).length;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(context, 'Assigned tasks', assignedIssues.length.toString()),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(context, 'Pending', pendingIssues.toString()),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(context, 'Completed', completedLogs.toString()),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(context, 'Total logs', myLogs.length.toString()),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String title, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return DashboardHighlightsPanel(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              letterSpacing: -0.5,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: assignedIssues.length.toString(),
+                  label: 'Assigned tasks',
+                  footer: 'Issues assigned to you',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: pendingIssues.toString(),
+                  label: 'Pending',
+                  footer: 'Open or acknowledged',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.15,
-              height: 1.2,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: completedLogs.toString(),
+                  label: 'Completed',
+                  footer: 'Your finished logs',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: myLogs.length.toString(),
+                  label: 'Total logs',
+                  footer: 'All logs you created',
+                ),
+              ),
+            ],
           ),
         ],
       ),

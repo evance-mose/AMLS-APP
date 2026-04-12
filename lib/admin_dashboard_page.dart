@@ -2,6 +2,8 @@ import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/home/home_cubit.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/widgets/app_bar_settings_menu.dart';
+import 'package:amls/widgets/dashboard_highlight_stat_card.dart';
+import 'package:amls/widgets/dashboard_weekly_overview_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -170,7 +172,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -180,17 +182,30 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         _buildMonthlyReportHeader(context, state.monthlyReport!),
                         const SizedBox(height: 24),
                       ],
+                      DashboardWeeklyOverviewCard(
+                        issuesByDay: state.issuesPerDayLast7,
+                        logsByDay: state.logsPerDayLast7,
+                      ),
+                      const SizedBox(height: 20),
                       _buildKPIGrid(context, state),
                       const SizedBox(height: 32),
-                      Text(
-                        'Admin Actions',
-                        style: textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Admin Actions',
+                              style: textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildAdminActionCards(context),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      _buildAdminActionCards(context),
                       const SizedBox(height: 80),
                     ],
                   ),
@@ -233,7 +248,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             decoration: InputDecoration(
               labelText: 'Month',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             ),
             items: List.generate(12, (i) => i + 1).map((m) {
               return DropdownMenuItem(value: m, child: Text(months[m - 1]));
@@ -253,7 +268,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             decoration: InputDecoration(
               labelText: 'Year',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             ),
             items: years.map((y) => DropdownMenuItem(value: y, child: Text('$y'))).toList(),
             onChanged: (value) {
@@ -273,7 +288,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final textTheme = Theme.of(context).textTheme;
     final reportInfo = monthlyReport.reportInfo;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -282,7 +297,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       child: Row(
         children: [
           Icon(Icons.summarize, color: colorScheme.primary, size: 32),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,101 +323,67 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Widget _buildKPIGrid(BuildContext context, dynamic state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(context, 'Total logs', '${state.totalLogs}'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(context, 'Total issues', '${state.totalIssues}'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(context, 'Open issues', '${state.openIssues}'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(context, 'Critical', '${state.criticalIssues}'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Resolution rate',
-                '${state.resolutionRate.toStringAsFixed(1)}%',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Avg resolution (hrs)',
-                state.avgResolutionTime.toStringAsFixed(1),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String title, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return DashboardHighlightsPanel(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              letterSpacing: -0.5,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.totalLogs}',
+                  label: 'Total logs',
+                  footer: 'Maintenance records this month',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.totalIssues}',
+                  label: 'Total issues',
+                  footer: 'All priorities combined',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.15,
-              height: 1.2,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.openIssues}',
+                  label: 'Open issues',
+                  footer: 'Still active in period',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.criticalIssues}',
+                  label: 'Critical',
+                  footer: 'Highest severity count',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: '${state.resolutionRate.toStringAsFixed(1)}%',
+                  label: 'Resolution rate',
+                  footer: 'Share of issues closed',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DashboardHighlightStatCard(
+                  value: state.avgResolutionTime.toStringAsFixed(1),
+                  label: 'Avg resolution (hrs)',
+                  footer: 'Mean time to close',
+                ),
+              ),
+            ],
           ),
         ],
       ),

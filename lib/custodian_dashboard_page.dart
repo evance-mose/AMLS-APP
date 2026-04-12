@@ -1,9 +1,14 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:amls/database/sync_queue.dart';
+import 'package:amls/models/issue_model.dart';
+import 'package:amls/models/log_model.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/utils/chart_buckets.dart';
 import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:amls/widgets/dashboard_connectivity_chip.dart';
+import 'package:amls/widgets/dashboard_highlight_stat_card.dart';
+import 'package:amls/widgets/dashboard_weekly_overview_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -197,13 +202,6 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
             showCachedBanner = state.fromCache;
           }
 
-          // Get user's reported issues
-          final user = (authState as AuthAuthenticated).user;
-          final myIssues = issues.where((issue) {
-            // Filter issues reported by this custodian (you may need to adjust this based on your data model)
-            return true; // For now, show all issues
-          }).toList();
-
           return RefreshIndicator(
             onRefresh: () async {
               await context.read<IssueCubit>().fetchIssues();
@@ -212,7 +210,7 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -223,7 +221,7 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
                           color: colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -269,19 +267,33 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
                           ),
                         ),
                       ),
-                    _buildWelcomeCard(context, user),
-                    const SizedBox(height: 24),
+                    DashboardWeeklyOverviewCard(
+                      issuesByDay: bucketIssuesByDayLast7(
+                        issues.map((e) => e as Issue).toList(),
+                      ),
+                      logsByDay: bucketLogsByDayLast7(const <Log>[]),
+                      subtitle: 'Issues only · 7 days',
+                    ),
+                    const SizedBox(height: 20),
                     _buildStatsCards(context, issues),
                     const SizedBox(height: 32),
-                    Text(
-                      'Quick Actions',
-                      style: textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Quick Actions',
+                            style: textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildCustodianActionCards(context),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildCustodianActionCards(context),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -303,65 +315,7 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context, User? user) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withOpacity(0.1),
-            colorScheme.secondary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.person_outline, color: colorScheme.primary, size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${user?.name ?? 'Custodian'}!',
-                  style: textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Log faults and report issues quickly',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatsCards(BuildContext context, List<dynamic> issues) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     final totalIssues = issues.length;
     final openIssues = issues.where((issue) {
       try {
@@ -371,62 +325,23 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
       }
     }).length;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(context, 'Total issues', totalIssues.toString()),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(context, 'Open issues', openIssues.toString()),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String title, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return DashboardHighlightsPanel(
+      child: Row(
         children: [
-          Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              letterSpacing: -0.5,
+          Expanded(
+            child: DashboardHighlightStatCard(
+              value: totalIssues.toString(),
+              label: 'Total issues',
+              footer: 'Visible in your workspace',
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: textTheme.labelMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.15,
-              height: 1.2,
+          const SizedBox(width: 12),
+          Expanded(
+            child: DashboardHighlightStatCard(
+              value: openIssues.toString(),
+              label: 'Open issues',
+              footer: 'Not yet resolved',
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:amls/services/api_service.dart';
 import 'package:amls/models/log_model.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
+import 'package:amls/utils/chart_buckets.dart';
 
 part 'home_state.dart';
 
@@ -53,6 +54,8 @@ class HomeCubit extends Cubit<HomeState> {
         avgResolutionTime: avgResolutionTime,
         recentLogs: logs.take(5).toList(),
         recentIssues: issues.take(5).toList(),
+        issuesPerDayLast7: bucketIssuesByDayLast7(issues),
+        logsPerDayLast7: bucketLogsByDayLast7(logs),
         monthlyReport: monthlyReport,
       ));
     } catch (e) {
