@@ -398,23 +398,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Assigned Tasks',
-                assignedIssues.length.toString(),
-                Icons.assignment,
-                Colors.blue,
-              ),
+              child: _buildStatCard(context, 'Assigned tasks', assignedIssues.length.toString()),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Pending',
-                pendingIssues.toString(),
-                Icons.pending,
-                Colors.orange,
-              ),
+              child: _buildStatCard(context, 'Pending', pendingIssues.toString()),
             ),
           ],
         ),
@@ -422,23 +410,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Completed',
-                completedLogs.toString(),
-                Icons.check_circle,
-                Colors.green,
-              ),
+              child: _buildStatCard(context, 'Completed', completedLogs.toString()),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Logs',
-                myLogs.length.toString(),
-                Icons.list_alt,
-                Colors.purple,
-              ),
+              child: _buildStatCard(context, 'Total logs', myLogs.length.toString()),
             ),
           ],
         ),
@@ -446,55 +422,49 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
     );
   }
 
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatCard(BuildContext context, String title, String value) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Container(
-          //   padding: const EdgeInsets.all(10),
-          //   decoration: BoxDecoration(
-          //     color: color.withOpacity(0.1),
-          //     borderRadius: BorderRadius.circular(10),
-          //   ),
-          //   child: Icon(icon, color: color, size: 24),
-          // ),
-          // const SizedBox(height: 16),
           Text(
             value,
-            style: textTheme.headlineMedium?.copyWith(
+            style: textTheme.headlineSmall?.copyWith(
               color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+              letterSpacing: -0.5,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             title,
-            style: textTheme.bodyMedium?.copyWith(
+            style: textTheme.labelMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.15,
+              height: 1.2,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

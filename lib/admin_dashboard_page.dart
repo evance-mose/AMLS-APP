@@ -316,23 +316,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Logs',
-                '${state.totalLogs}',
-                Icons.list_alt,
-                Colors.blue,
-              ),
+              child: _buildStatCard(context, 'Total logs', '${state.totalLogs}'),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(
-                context,
-                'Total Issues',
-                '${state.totalIssues}',
-                Icons.warning_amber_outlined,
-                Colors.orange,
-              ),
+              child: _buildStatCard(context, 'Total issues', '${state.totalIssues}'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(context, 'Open issues', '${state.openIssues}'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(context, 'Critical', '${state.criticalIssues}'),
             ),
           ],
         ),
@@ -342,44 +342,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Expanded(
               child: _buildStatCard(
                 context,
-                'Open Issues',
-                '${state.openIssues}',
-                Icons.info_outlined,
-                Colors.red,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Critical',
-                '${state.criticalIssues}',
-                Icons.priority_high,
-                Colors.deepOrange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                context,
-                'Resolution Rate',
+                'Resolution rate',
                 '${state.resolutionRate.toStringAsFixed(1)}%',
-                Icons.trending_up,
-                Colors.green,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 context,
-                'Avg Resolution (hrs)',
+                'Avg resolution (hrs)',
                 state.avgResolutionTime.toStringAsFixed(1),
-                Icons.schedule,
-                Colors.teal,
               ),
             ),
           ],
@@ -388,56 +360,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatCard(BuildContext context, String title, String value) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 12),
           Text(
             value,
             style: textTheme.headlineSmall?.copyWith(
               color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+              letterSpacing: -0.5,
             ),
             maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: textTheme.labelMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.15,
+              height: 1.2,
+            ),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ],
