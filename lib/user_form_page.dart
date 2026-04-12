@@ -1,3 +1,4 @@
+import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/services/api_service.dart';
@@ -183,39 +184,47 @@ class _UserFormPageState extends State<UserFormPage> {
         ),
         actions: widget.isViewOnly
             ? [
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
-                  ),
-                  onPressed: () async {
-                    // Navigate to edit mode
-                    final updatedUser = await Navigator.of(context).push<User?>(
-                      MaterialPageRoute(
-                        builder: (context) => UserFormPage(user: widget.user, isViewOnly: false),
-                      ),
-                    );
-                    
-                    // If we got an updated user, pop this view page and return the updated user
-                    if (updatedUser != null && mounted) {
-                      Navigator.of(context).pop(updatedUser);
+                AppBarSettingsMenu(
+                  onSelected: (value) async {
+                    if (value == 'edit') {
+                      final updatedUser = await Navigator.of(context).push<User?>(
+                        MaterialPageRoute(
+                          builder: (context) => UserFormPage(user: widget.user, isViewOnly: false),
+                        ),
+                      );
+                      if (updatedUser != null && mounted) {
+                        Navigator.of(context).pop(updatedUser);
+                      }
+                    } else if (value == 'delete') {
+                      _confirmDelete();
                     }
                   },
-                ),
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
-                  ),
-                  onPressed: _confirmDelete,
+                  itemBuilder: (ctx) {
+                    final tt = Theme.of(ctx).textTheme;
+                    final cs = Theme.of(ctx).colorScheme;
+                    return [
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20, color: cs.primary),
+                            const SizedBox(width: 12),
+                            Text('Edit', style: tt.bodyMedium),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: cs.error),
+                            const SizedBox(width: 12),
+                            Text('Delete', style: tt.bodyMedium?.copyWith(color: cs.error)),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
                 ),
                 const SizedBox(width: 8),
               ]

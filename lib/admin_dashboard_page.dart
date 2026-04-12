@@ -1,6 +1,7 @@
 import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/home/home_cubit.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -81,46 +82,32 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: colorScheme.onSurface),
-            onPressed: () {
-              context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
-            },
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
+          AppBarSettingsMenu(
             onSelected: (value) {
-              if (value == 'logout') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthCubit>().logout();
-                        },
-                        child: Text('Logout', style: TextStyle(color: colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
+              if (value == 'refresh') {
+                context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
+              } else if (value == 'logout') {
+                showSignOutConfirmDialog(context);
               }
             },
-            itemBuilder: (context) => [
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Refresh dashboard', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20, color: colorScheme.onSurface),
+                    Icon(Icons.logout, size: 20, color: colorScheme.error),
                     const SizedBox(width: 12),
-                    Text('Logout', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                    Text('Sign out', style: textTheme.bodyMedium?.copyWith(color: colorScheme.error)),
                   ],
                 ),
               ),

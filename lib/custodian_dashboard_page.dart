@@ -2,6 +2,7 @@ import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:amls/database/sync_queue.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/widgets/app_bar_settings_menu.dart';
 import 'package:amls/widgets/dashboard_connectivity_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -100,46 +101,48 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
           ],
         ),
         actions: [
-          const DashboardConnectivityChip(),
-          IconButton(
-            tooltip: 'Sync now',
-            icon: Icon(Icons.sync, color: colorScheme.onSurface),
-            onPressed: _syncNow,
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onSelected: (value) {
-              if (value == 'logout') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.read<AuthCubit>().logout();
-                        },
-                        child: Text('Logout', style: TextStyle(color: colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
+          AppBarSettingsMenu(
+            onSelected: (value) async {
+              switch (value) {
+                case 'connection':
+                  showDashboardConnectionDialog(context);
+                  break;
+                case 'sync':
+                  await _syncNow();
+                  break;
+                case 'logout':
+                  await showSignOutConfirmDialog(context);
+                  break;
               }
             },
-            itemBuilder: (context) => [
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'connection',
+                child: Row(
+                  children: [
+                    Icon(Icons.wifi, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Connection status', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'sync',
+                child: Row(
+                  children: [
+                    Icon(Icons.sync, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Sync data', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'logout',
                 child: Row(
                   children: [
-                    Icon(Icons.logout, size: 20, color: colorScheme.onSurface),
+                    Icon(Icons.logout, size: 20, color: colorScheme.error),
                     const SizedBox(width: 12),
-                    Text('Logout', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface)),
+                    Text('Sign out', style: textTheme.bodyMedium?.copyWith(color: colorScheme.error)),
                   ],
                 ),
               ),
@@ -251,7 +254,7 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
-                                          '$_pendingSyncCount update${_pendingSyncCount == 1 ? '' : 's'} queued — tap Sync when you are online.',
+                                          '$_pendingSyncCount update${_pendingSyncCount == 1 ? '' : 's'} queued — open Settings → Sync data when you are online.',
                                           style: textTheme.bodySmall?.copyWith(
                                             color: colorScheme.onSecondaryContainer,
                                             fontWeight: FontWeight.w600,

@@ -3,6 +3,33 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
+/// Full-screen dialog with live connectivity chip (for menus that replace the chip on the app bar).
+void showDashboardConnectionDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Connection'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(child: DashboardConnectivityChip()),
+          const SizedBox(height: 16),
+          Text(
+            'Wi‑Fi or mobile data. The server can still be unreachable.',
+            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+      ],
+    ),
+  );
+}
+
 /// Live network reachability (Wi‑Fi / mobile / none). Not a guarantee the API is up.
 class DashboardConnectivityChip extends StatefulWidget {
   const DashboardConnectivityChip({super.key});

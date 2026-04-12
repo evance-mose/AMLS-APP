@@ -285,13 +285,14 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Settings',
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
+              child: Icon(Icons.settings_outlined, color: colorScheme.onSurface, size: 20),
             ),
             onPressed: () {
               _showOptionsMenu(context);
