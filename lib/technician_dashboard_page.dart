@@ -67,6 +67,11 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
       );
     }
 
+    final user = authState.user;
+    final roleSubtitle = user != null
+        ? 'Logged in as ${user.role.displayLabel}'
+        : 'Logged in';
+
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
@@ -85,6 +90,14 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                Text(
+                  roleSubtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),

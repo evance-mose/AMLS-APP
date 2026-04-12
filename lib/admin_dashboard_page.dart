@@ -39,6 +39,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       );
     }
 
+    final user = authState.user;
+    final roleSubtitle = user != null
+        ? 'Logged in as ${user.role.displayLabel}'
+        : 'Logged in';
+
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
@@ -71,7 +76,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     maxLines: 1,
                   ),
                   Text(
-                    'Admin Dashboard',
+                    roleSubtitle,
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

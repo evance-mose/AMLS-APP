@@ -61,6 +61,11 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
       );
     }
 
+    final user = authState.user;
+    final roleSubtitle = user != null
+        ? 'Logged in as ${user.role.displayLabel}'
+        : 'Logged in';
+
     return Scaffold(
       backgroundColor: colorScheme.background,
       appBar: AppBar(
@@ -92,14 +97,14 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
-                  // Text(
-                  //   'Fault Logging',
-                  //   style: textTheme.bodySmall?.copyWith(
-                  //     color: colorScheme.onSurfaceVariant,
-                  //   ),
-                  //   overflow: TextOverflow.ellipsis,
-                  //   maxLines: 1,
-                  // ),
+                  Text(
+                    roleSubtitle,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ],
               ),
             ),
