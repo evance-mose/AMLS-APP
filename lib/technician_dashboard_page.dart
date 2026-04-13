@@ -107,6 +107,9 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
           AppBarSettingsMenu(
             onSelected: (value) async {
               switch (value) {
+                case 'settings':
+                  Navigator.pushNamed(context, '/technician-settings');
+                  break;
                 case 'connection':
                   showDashboardConnectionDialog(context);
                   break;
@@ -119,6 +122,16 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
               }
             },
             itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, size: 20, color: colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    Text('Settings', style: textTheme.bodyMedium),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'connection',
                 child: Row(

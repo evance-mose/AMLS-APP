@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:amls/services/auth_service.dart';
 import 'package:amls/models/user_model.dart';
+import 'package:amls/services/auth_service.dart';
+import 'package:amls/services/location_trail_service.dart';
 
 part 'auth_state.dart';
 
@@ -19,6 +20,9 @@ class AuthCubit extends Cubit<AuthState> {
         final user = await AuthService.getUser();
         if (token != null) {
           emit(AuthAuthenticated(token: token, user: user));
+          if (user?.role == UserRole.technician) {
+            await LocationTrailService.instance.restoreIfEnabled();
+          }
         }
       }
     } catch (e) {
@@ -34,6 +38,10 @@ class AuthCubit extends Cubit<AuthState> {
         token: result['token'],
         user: result['user'],
       ));
+      final user = result['user'] as User?;
+      if (user?.role == UserRole.technician) {
+        await LocationTrailService.instance.restoreIfEnabled();
+      }
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -42,6 +50,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     emit(AuthLoading());
     try {
+      LocationTrailService.instance.stopForLogout();
       await AuthService.logout();
       emit(AuthInitial());
     } catch (e) {

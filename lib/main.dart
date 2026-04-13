@@ -12,6 +12,8 @@ import 'login_page.dart';
 import 'logs_page.dart';
 import 'ai_assistant_page.dart';
 import 'users_page.dart';
+import 'technician_settings_page.dart';
+import 'widgets/location_trail_lifecycle_scope.dart';
 
 
 Future<void> main() async {
@@ -35,6 +37,11 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'AMLS',
+        builder: (context, child) {
+          return LocationTrailLifecycleScope(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.grey,
@@ -106,6 +113,7 @@ class MyApp extends StatelessWidget {
           '/issues': (context) => const IssuesScreen(),
           '/ai-assistant': (context) => const AIAssistantPage(),
           '/users': (context) => const UsersScreen(),
+          '/technician-settings': (context) => const TechnicianSettingsPage(),
         },
       ),
     );

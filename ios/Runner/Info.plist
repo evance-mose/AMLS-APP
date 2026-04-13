@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is recorded periodically as a field trail while you use the app, when you turn this feature on.</string>
 </dict>
 </plist>

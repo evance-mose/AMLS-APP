@@ -189,6 +189,36 @@ class ApiService {
       throw Exception('Error creating log: $e');
     }
   }
+
+  /// Append one GPS sample to the technician trail. Backend should expose
+  /// `POST /location-trail` (or adjust URL) accepting this JSON body.
+  static Future<void> submitLocationTrailPoint({
+    required double latitude,
+    required double longitude,
+    required double accuracyMeters,
+    required DateTime recordedAt,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('${BaseUrl.baseUrl}/location-trail'),
+        headers: headers,
+        body: json.encode({
+          'latitude': latitude,
+          'longitude': longitude,
+          'accuracy_meters': accuracyMeters,
+          'recorded_at': recordedAt.toUtc().toIso8601String(),
+        }),
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Trail upload failed: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      if (e is SocketException) rethrow;
+      throw Exception('Error uploading location trail: $e');
+    }
+  }
+
   // Update an existing log
   static Future<Log> updateLog(int id, Log log) async {
     try {
