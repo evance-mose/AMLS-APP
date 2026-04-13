@@ -412,6 +412,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         const SizedBox(height: 16),
         _buildModernActionCard(
           context,
+          'Technician locations',
+          'Latest GPS trail from field staff',
+          Icons.my_location,
+          [Colors.indigo.shade600, Colors.indigo.shade400],
+          () => Navigator.pushNamed(context, '/technician-locations'),
+        ),
+        const SizedBox(height: 16),
+        _buildModernActionCard(
+          context,
           'View Issues',
           'View and manage all issues',
           Icons.assignment,

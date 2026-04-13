@@ -93,7 +93,7 @@ class _TechnicianSettingsPageState extends State<TechnicianSettingsPage> {
                       ),
                     ),
                     subtitle: Text(
-                      'Sends your GPS about every 3 minutes while the app is open. Pauses when you leave the app.',
+                      'While the app is open, checks about every 30s and uploads to the server when at least 45s passed or you moved ~50m (POST /api/location-trail). Pauses in the background.',
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         height: 1.35,

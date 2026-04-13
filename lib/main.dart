@@ -12,6 +12,7 @@ import 'login_page.dart';
 import 'logs_page.dart';
 import 'ai_assistant_page.dart';
 import 'users_page.dart';
+import 'technician_locations_page.dart';
 import 'technician_settings_page.dart';
 import 'widgets/location_trail_lifecycle_scope.dart';
 
@@ -114,6 +115,7 @@ class MyApp extends StatelessWidget {
           '/ai-assistant': (context) => const AIAssistantPage(),
           '/users': (context) => const UsersScreen(),
           '/technician-settings': (context) => const TechnicianSettingsPage(),
+          '/technician-locations': (context) => const TechnicianLocationsPage(),
         },
       ),
     );
