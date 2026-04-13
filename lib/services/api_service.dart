@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:amls/models/log_model.dart';
 import 'package:amls/models/issue_model.dart';
 import 'package:amls/models/monthly_report_model.dart';
+import 'package:amls/models/user_location_snapshot.dart';
 import 'package:amls/models/user_model.dart';
 import 'package:amls/services/auth_service.dart';
 // ignore: avoid_relative_lib_imports
@@ -189,6 +190,80 @@ class ApiService {
       throw Exception('Error creating log: $e');
     }
   }
+
+  /// Append one GPS sample: `POST /api/location-trail` with Bearer token.
+  /// Body uses UTC [recorded_at]; do not send `user_id` (server uses auth user).
+  static Future<void> submitLocationTrailPoint({
+    required double latitude,
+    required double longitude,
+    required double accuracyMeters,
+    required DateTime recordedAt,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse(BaseUrl.locationTrailUrl),
+        headers: headers,
+        body: json.encode({
+          'latitude': latitude,
+          'longitude': longitude,
+          'accuracy_meters': accuracyMeters,
+          'recorded_at': recordedAt.toUtc().toIso8601String(),
+        }),
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Trail upload failed: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      if (e is SocketException) rethrow;
+      throw Exception('Error uploading location trail: $e');
+    }
+  }
+
+  /// Admin: `GET /api/location-trail?hours=…` — JSON array or `data` / `locations` / `points`.
+  static Future<List<UserLocationSnapshot>> fetchLocationTrailForAdmin({int? withinHours}) async {
+    try {
+      final headers = await _getHeaders();
+      final uri = withinHours != null
+          ? Uri.parse(BaseUrl.locationTrailUrl)
+              .replace(queryParameters: {'hours': '$withinHours'})
+          : Uri.parse(BaseUrl.locationTrailUrl);
+      final response = await http.get(uri, headers: headers);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load locations: ${response.statusCode} ${response.body}');
+      }
+
+      final decoded = json.decode(response.body);
+      final List<dynamic> raw;
+      if (decoded is List) {
+        raw = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        final m = decoded;
+        if (m['data'] is List) {
+          raw = m['data'] as List<dynamic>;
+        } else if (m['locations'] is List) {
+          raw = m['locations'] as List<dynamic>;
+        } else if (m['points'] is List) {
+          raw = m['points'] as List<dynamic>;
+        } else {
+          throw Exception('Unexpected location trail response shape');
+        }
+      } else {
+        throw Exception('Unexpected location trail response');
+      }
+
+      final list = raw
+          .map((e) => UserLocationSnapshot.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      list.sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+      return list;
+    } catch (e) {
+      if (e is SocketException) rethrow;
+      throw Exception('Error loading technician locations: $e');
+    }
+  }
+
   // Update an existing log
   static Future<Log> updateLog(int id, Log log) async {
     try {

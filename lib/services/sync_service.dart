@@ -109,5 +109,13 @@ class SyncService {
       final action = map['action_taken'] as String?;
       await ApiService.createLog(Issue.fromJson(issueMap), actionTaken: action);
     }
+    if (entity == kSyncEntityLocationTrail && operation == kSyncOpCreate) {
+      await ApiService.submitLocationTrailPoint(
+        latitude: (map['latitude'] as num).toDouble(),
+        longitude: (map['longitude'] as num).toDouble(),
+        accuracyMeters: (map['accuracy_meters'] as num).toDouble(),
+        recordedAt: DateTime.parse(map['recorded_at'] as String).toUtc(),
+      );
+    }
   }
 }

@@ -52,15 +52,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.dashboard_outlined, color: colorScheme.primary, size: 24),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -408,6 +399,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Icons.people,
           [Colors.blue.shade600, Colors.blue.shade400],
           () => Navigator.pushNamed(context, '/users'),
+        ),
+        const SizedBox(height: 16),
+        _buildModernActionCard(
+          context,
+          'Technician locations',
+          'Latest GPS trail from field staff',
+          Icons.my_location,
+          [Colors.indigo.shade600, Colors.indigo.shade400],
+          () => Navigator.pushNamed(context, '/technician-locations'),
         ),
         const SizedBox(height: 16),
         _buildModernActionCard(

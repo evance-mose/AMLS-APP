@@ -7,6 +7,7 @@ import 'package:amls/database/local_db.dart';
 const String kSyncEntityIssue = 'issue';
 const String kSyncEntityLog = 'log';
 const String kSyncEntityIssueLog = 'issue_log';
+const String kSyncEntityLocationTrail = 'location_trail';
 
 const String kSyncOpCreate = 'create';
 const String kSyncOpUpdate = 'update';
