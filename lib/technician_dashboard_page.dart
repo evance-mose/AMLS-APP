@@ -56,6 +56,7 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final authState = context.watch<AuthCubit>().state;
+    const showWeeklyOverview = false;
 
     // Ensure user is technician
     if (authState is! AuthAuthenticated || authState.user?.role != UserRole.technician) {
@@ -311,11 +312,13 @@ class _TechnicianDashboardPageState extends State<TechnicianDashboardPage> {
                               ),
                             ),
                           ),
-                        DashboardWeeklyOverviewCard(
-                          issuesByDay: bucketIssuesByDayLast7(issues),
-                          logsByDay: bucketLogsByDayLast7(logs),
-                        ),
-                        const SizedBox(height: 20),
+                        if (showWeeklyOverview) ...[
+                          DashboardWeeklyOverviewCard(
+                            issuesByDay: bucketIssuesByDayLast7(issues),
+                            logsByDay: bucketLogsByDayLast7(logs),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         _buildStatsCards(context, assignedIssues, myLogs),
                         const SizedBox(height: 32),
                         Padding(

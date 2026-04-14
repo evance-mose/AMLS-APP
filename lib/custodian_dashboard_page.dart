@@ -50,6 +50,7 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final authState = context.watch<AuthCubit>().state;
+    const showWeeklyOverview = false;
 
     // Ensure user is custodian
     if (authState is! AuthAuthenticated || authState.user?.role != UserRole.custodian) {
@@ -272,14 +273,16 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
                           ),
                         ),
                       ),
-                    DashboardWeeklyOverviewCard(
-                      issuesByDay: bucketIssuesByDayLast7(
-                        issues.map((e) => e as Issue).toList(),
+                    if (showWeeklyOverview) ...[
+                      DashboardWeeklyOverviewCard(
+                        issuesByDay: bucketIssuesByDayLast7(
+                          issues.map((e) => e as Issue).toList(),
+                        ),
+                        logsByDay: bucketLogsByDayLast7(const <Log>[]),
+                        subtitle: 'Issues only · 7 days',
                       ),
-                      logsByDay: bucketLogsByDayLast7(const <Log>[]),
-                      subtitle: 'Issues only · 7 days',
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                    ],
                     _buildStatsCards(context, issues),
                     const SizedBox(height: 32),
                     Padding(

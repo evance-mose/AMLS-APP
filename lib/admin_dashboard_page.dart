@@ -29,6 +29,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final authState = context.watch<AuthCubit>().state;
+    const showWeeklyOverview = false;
 
     if (authState is! AuthAuthenticated || authState.user?.role != UserRole.admin) {
       return Scaffold(
@@ -178,11 +179,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         _buildMonthlyReportHeader(context, state.monthlyReport!),
                         const SizedBox(height: 24),
                       ],
-                      DashboardWeeklyOverviewCard(
-                        issuesByDay: state.issuesPerDayLast7,
-                        logsByDay: state.logsPerDayLast7,
-                      ),
-                      const SizedBox(height: 20),
+                      if (showWeeklyOverview) ...[
+                        DashboardWeeklyOverviewCard(
+                          issuesByDay: state.issuesPerDayLast7,
+                          logsByDay: state.logsPerDayLast7,
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                       _buildKPIGrid(context, state),
                       const SizedBox(height: 32),
                       Padding(
