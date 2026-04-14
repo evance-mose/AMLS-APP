@@ -107,13 +107,8 @@ class _IssueFormPageState extends State<IssueFormPage> {
         setState(() {
           _isLoadingUsers = false;
         });
-        // Show error message to user
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load users: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        // Hide error popup; keep details in logs.
+        debugPrint('Failed to load users (issue form): $e');
       }
     }
   }
@@ -227,12 +222,8 @@ class _IssueFormPageState extends State<IssueFormPage> {
 
   void _showAssignIssueSheet() {
     if (!_canAssignIssue) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('You do not have permission to assign issues.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      // Hide error popup; keep details in logs.
+      debugPrint('Assign issue blocked: user lacks permission.');
       return;
     }
 

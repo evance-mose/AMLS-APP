@@ -165,12 +165,8 @@ class _CustodianDashboardPageState extends State<CustodianDashboardPage> {
       body: BlocConsumer<IssueCubit, IssueState>(
         listener: (context, state) {
           if (state is IssueError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: colorScheme.error,
-              ),
-            );
+            // Hide error popup; keep details in logs.
+            debugPrint('IssueError (custodian dashboard): ${state.message}');
           }
         },
         builder: (context, state) {

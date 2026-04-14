@@ -35,9 +35,8 @@ class _LoginPageState extends State<LoginPage> {
           );
           // Navigation is now handled by main.dart BlocBuilder
         } else if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          // Hide error popup; keep details in logs.
+          debugPrint('AuthError (login): ${state.message}');
         }
       },
       builder: (context, state) {

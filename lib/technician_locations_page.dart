@@ -152,9 +152,8 @@ class _TechnicianLocationsPageState extends State<TechnicianLocationsPage> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open maps')),
-      );
+      // Hide error popup; keep details in logs.
+      debugPrint('Could not open maps for ${s.latitude},${s.longitude}');
     }
   }
 
@@ -256,7 +255,7 @@ class _TechnicianLocationsPageState extends State<TechnicianLocationsPage> {
             initialZoom: 6,
           ),
           children: [
-            const TileLayer(
+            TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.amls',
             ),

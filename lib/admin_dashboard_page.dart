@@ -118,19 +118,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: BlocConsumer<HomeCubit, HomeState>(
         listener: (context, state) {
           if (state is HomeError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: colorScheme.error,
-                action: SnackBarAction(
-                  label: 'Retry',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    context.read<HomeCubit>().fetchHomeSummary(month: _selectedMonth, year: _selectedYear);
-                  },
-                ),
-              ),
-            );
+            // Hide error popup; keep details in logs.
+            debugPrint('HomeError (admin dashboard): ${state.message}');
           }
         },
         builder: (context, state) {

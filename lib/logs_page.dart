@@ -29,20 +29,8 @@ class _MaintenanceLogsScreenState extends State<MaintenanceLogsScreen> {
     return BlocConsumer<LogCubit, LogState>(
       listener: (context, state) {
         if (state is LogError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(state.message)),
-                ],
-              ),
-              backgroundColor: colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          // Hide error popup; keep details in logs.
+          debugPrint('LogError (logs list): ${state.message}');
         }
       },
       builder: (context, state) {

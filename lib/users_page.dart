@@ -131,12 +131,8 @@ class _UsersScreenState extends State<UsersScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete user: $e'),
-              backgroundColor: colorScheme.error,
-            ),
-          );
+          // Hide error popup; keep details in logs.
+          debugPrint('Failed to delete user (id=${user.id}): $e');
         }
       }
     }
@@ -395,12 +391,8 @@ class _UsersScreenState extends State<UsersScreen> {
               }
             } catch (e) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to create user: $e'),
-                    backgroundColor: colorScheme.error,
-                  ),
-                );
+                // Hide error popup; keep details in logs.
+                debugPrint('Failed to create user (${newUser.email}): $e');
               }
             }
           }
@@ -468,12 +460,8 @@ class _UsersScreenState extends State<UsersScreen> {
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update user: $e'),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
+                    // Hide error popup; keep details in logs.
+                    debugPrint('Failed to update user (id=${result.id}): $e');
                   }
                 }
               }

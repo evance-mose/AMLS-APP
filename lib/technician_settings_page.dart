@@ -112,13 +112,9 @@ class _TechnicianSettingsPageState extends State<TechnicianSettingsPage> {
                               _trailEnabled = e;
                             });
                             if (v && !e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text(
-                                    'Could not start trail. Turn on location services and allow location access.',
-                                  ),
-                                  backgroundColor: colorScheme.error,
-                                ),
+                              // Hide error popup; keep details in logs.
+                              debugPrint(
+                                'Location trail could not start. Check location services/permissions.',
                               );
                             }
                           },

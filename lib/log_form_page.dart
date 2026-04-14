@@ -82,12 +82,8 @@ class _LogFormPageState extends State<LogFormPage> {
         setState(() {
           _isLoadingUsers = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load users: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        // Hide error popup; keep details in logs.
+        debugPrint('Failed to load users (log form): $e');
       }
     }
   }

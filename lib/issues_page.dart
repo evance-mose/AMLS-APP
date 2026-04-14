@@ -41,9 +41,8 @@ class _IssuesScreenState extends State<IssuesScreen> {
     return BlocConsumer<IssueCubit, IssueState>(
       listener: (context, state) {
         if (state is IssueError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          // Hide error popup; keep details in logs.
+          debugPrint('IssueError (issues list): ${state.message}');
         }
       },
       builder: (context, state) {
