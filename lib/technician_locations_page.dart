@@ -35,6 +35,8 @@ class TechnicianLocationsPage extends StatefulWidget {
 class _TechnicianLocationsPageState extends State<TechnicianLocationsPage> {
   final MapController _mapController = MapController();
 
+  static const LatLng _malawiCenter = LatLng(-13.2543, 34.3015);
+
   List<UserLocationSnapshot>? _items;
   List<_TrailLegendEntry>? _legend;
   String? _error;
@@ -245,28 +247,78 @@ class _TechnicianLocationsPageState extends State<TechnicianLocationsPage> {
   }
 
   Widget _buildEmpty(ColorScheme colorScheme, TextTheme textTheme) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
-        children: [
-          const SizedBox(height: 48),
-          Icon(Icons.map_outlined, size: 64, color: colorScheme.outline),
-          const SizedBox(height: 16),
-          Text(
-            'No trail data',
-            style: textTheme.titleMedium,
-            textAlign: TextAlign.center,
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: const MapOptions(
+            initialCenter: _malawiCenter,
+            initialZoom: 6,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Technicians enable Location trail in Settings. The API must accept POST /api/location-trail and return points from GET /api/location-trail?hours=72 (JSON in data, locations, or points).',
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
+          children: [
+            const TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.amls',
+            ),
+            RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution(
+                  'OpenStreetMap',
+                  onTap: () {
+                    launchUrl(
+                      Uri.parse('https://openstreetmap.org/copyright'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 16,
+          child: SafeArea(
+            top: false,
+            child: Material(
+              color: colorScheme.surface.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_off_outlined, color: colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'No trail data yet',
+                            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('Refresh'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Technicians enable Location trail in Settings. The API must accept POST /api/location-trail and return points from GET /api/location-trail?hours=72 (JSON in data, locations, or points).',
+                      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -332,8 +384,8 @@ class _TechnicianLocationsPageState extends State<TechnicianLocationsPage> {
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: legend.first.points.last,
-              initialZoom: 12,
+              initialCenter: _malawiCenter,
+              initialZoom: 6,
               onMapReady: _scheduleMapFit,
             ),
             children: [
