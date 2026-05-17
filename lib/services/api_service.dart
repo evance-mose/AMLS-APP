@@ -26,9 +26,13 @@ class ApiService {
   // Ask AI Assistant
   static Future<String> askAssistant(String message) async {
     try {
+      final url = BaseUrl.assistantChatUrl;
+      if (url.isEmpty) {
+        throw Exception('ASSISTANT_URL is not configured');
+      }
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8080/assistant'),
+        Uri.parse(url),
         headers: headers,
         body: json.encode({
           'message': message,
@@ -56,9 +60,13 @@ class ApiService {
   // Get AI Assistant quick action suggestions
   static Future<List<String>> fetchAssistantSuggestions() async {
     try {
+      final url = BaseUrl.assistantSuggestionsUrl;
+      if (url.isEmpty) {
+        throw Exception('BASE_URL is not configured');
+      }
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('${BaseUrl.baseUrl}/assistant/suggestions'),
+        Uri.parse(url),
         headers: headers,
       );
 
