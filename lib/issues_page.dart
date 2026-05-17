@@ -1,8 +1,10 @@
+import 'package:amls/cubits/auth/auth_cubit.dart';
 import 'package:amls/cubits/issues/issue_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:amls/issue_form_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:amls/models/issue_model.dart'; // Import the Issue model
+import 'package:amls/models/issue_model.dart';
+import 'package:amls/models/user_model.dart';
 
 class IssuesScreen extends StatefulWidget {
   const IssuesScreen({super.key});
@@ -297,10 +299,17 @@ class _IssuesScreenState extends State<IssuesScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () async {
+            final authState = context.read<AuthCubit>().state;
+            final isTechnician = authState is AuthAuthenticated &&
+                authState.user?.role == UserRole.technician;
+
             final result = await Navigator.push<dynamic>(
               context,
               MaterialPageRoute(
-                builder: (context) => IssueFormPage(issue: issue, isViewOnly: true),
+                builder: (context) => IssueFormPage(
+                  issue: issue,
+                  isViewOnly: !isTechnician,
+                ),
               ),
             );
 
